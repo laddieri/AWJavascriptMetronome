@@ -1,0 +1,29 @@
+* {
+  padding: 10px;
+  margin: 10px;
+}
+body {
+  margin: 0px;
+}
+
+.soundbox {
+  border: 1px solid black;
+  width:20px;
+  float: left;
+}
+
+.soundbox:active {
+  background-color: blue;
+}
+
+.active {
+  height:50px;
+  width:50px;
+  background: blue;
+  position: absolute;
+}
+
+.p5Canvas{
+  border: 1px solid black;
+  padding: 0px;
+}
