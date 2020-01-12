@@ -3,16 +3,26 @@ var rad=50;
 var t=0;
 var secondsPerBeat;
 var bpm = 60;
+var ball1;
+var ball2;
 
 // Ball class to allow for two bouncing balls at once
 class Ball {
-  constructor(direction, radius){
-    this.direction = direction;
+  x =100;
+  constructor(radius){
     this.radius = radius;
   };
 
   ballmove(){
     console.log("ball position changed " + this.radius)
+  }
+
+  display(){
+    ellipse(x,50,50,50);
+  }
+
+  move(){
+    
   }
 }
 
@@ -69,10 +79,8 @@ function setup() {
   xpos=xwidth/2+rad;
 
   // To-do create 2 instances of ball class
-  let ball1 = new Ball(1, 10);
-  let ball2 = new Ball(1,20);
-  ball1.ballmove();
-  ball2.ballmove();
+  ball1 = new Ball(1, 10);
+  ball2 = new Ball(1,20);
 }
 
 //
@@ -81,6 +89,7 @@ function draw() {
   ellipse(xpos, 50, rad, rad);
   xpos = updateXpos(xpos) + 640/2;
   t++;
+  ball1.display();
 }
 
 function updateXpos(xpos){
