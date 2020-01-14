@@ -12,6 +12,9 @@ body {
   float: left;
 }
 
+.toggle {
+  width: 100px;
+}
 .soundbox:active {
   background-color: blue;
 }
@@ -26,4 +29,5 @@ body {
 .p5Canvas{
   border: 1px solid black;
   padding: 0px;
+  clear: both;
 }

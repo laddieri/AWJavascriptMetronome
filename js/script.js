@@ -5,25 +5,29 @@ var secondsPerBeat;
 var bpm = 60;
 var ball1;
 var ball2;
+// var running;
 
 // Ball class to allow for two bouncing balls at once
 class Ball {
-  x =100;
-  constructor(radius){
+
+  constructor(radius, direction){
     this.radius = radius;
+    this.direction=direction;
+    this.x = 100;
   };
 
   ballmove(){
-    console.log("ball position changed " + this.radius)
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
   }
 
   display(){
-    ellipse(x,50,50,50);
+
+    fill('rgb(0,0,255)');
+
+    noStroke();
+    ellipse(this.x,100,this.radius,this.radius);
   }
 
-  move(){
-    
-  }
 }
 
 // Start Audio Context on Mouseclick
@@ -61,8 +65,15 @@ Tone.Transport.loopEnd = '4n';
 //start/stop the transport
 document.querySelector('tone-play-toggle').addEventListener('change', e => Tone.Transport.toggle())
 
+// //start/stop the transport
+// document.querySelector('tone-play-toggle').addEventListener('change', function (e){
+//   Tone.Transport.toggle()
+//   running = !running;
+// });
+
 //start/stop the transport
 document.querySelector('tone-slider').addEventListener('change', e => Tone.Transport.bpm.value = e.detail)
+
 
 // Calculate seconds per beat from BPM
 function updateTime() {
@@ -78,23 +89,19 @@ function setup() {
   frameRate(60);
   xpos=xwidth/2+rad;
 
-  // To-do create 2 instances of ball class
-  ball1 = new Ball(1, 10);
-  ball2 = new Ball(1,20);
+  // Create 2 instances of ball class
+  ball1 = new Ball(75, 1);
+  ball2 = new Ball(75,-1);
 }
 
-//
+
 function draw() {
-  background(255);
-  ellipse(xpos, 50, rad, rad);
-  xpos = updateXpos(xpos) + 640/2;
+  background('#696969');
   t++;
   ball1.display();
-}
-
-function updateXpos(xpos){
-  xpos=1000/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t));
-  return xpos;
+  ball1.ballmove();
+  ball2.display();
+  ball2.ballmove();
 }
 
 updateTime()
