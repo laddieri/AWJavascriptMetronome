@@ -21,11 +21,14 @@ class Ball {
   }
 
   display(){
-
-    fill('rgb(0,0,255)');
-
-    noStroke();
+    stroke(0,0,0);
+    fill('rgb(241, 194, 125)');
     ellipse(this.x,100,this.radius,this.radius);
+    ellipse(this.x+30*this.direction,55,this.radius/2.5,this.radius/8);
+    ellipse(this.x+50*this.direction,75,this.radius/2.5,this.radius/8);
+    ellipse(this.x+50*this.direction,95,this.radius/2.5,this.radius/8);
+    ellipse(this.x+50*this.direction,115,this.radius/2.5,this.radius/8);
+    ellipse(this.x+50*this.direction,135,this.radius/2.5,this.radius/8);
   }
 
 }
@@ -44,7 +47,7 @@ var player = new Tone.Player("./sounds/clap.wav").toMaster();
 
 // TriggerSound Play
 function triggerSound(time){
-	player.start()
+	player.start(time)
 }
 
 // Schedule sound using Tone.js Transport Feature
@@ -89,14 +92,20 @@ function setup() {
   frameRate(60);
   xpos=xwidth/2+rad;
 
+
   // Create 2 instances of ball class
-  ball1 = new Ball(75, 1);
-  ball2 = new Ball(75,-1);
+  ball1 = new Ball(100, 1);
+  ball2 = new Ball(100,-1);
 }
 
 
 function draw() {
-  background('#696969');
+  if (t<5){
+    background('white');
+  } else {
+      background('#696969');
+  }
+
   t++;
   ball1.display();
   ball1.ballmove();
