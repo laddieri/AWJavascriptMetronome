@@ -41,7 +41,6 @@ class Pig {
 
   pigmove(){
     this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
-    console.log(this.x)
   }
 
   display(){
@@ -96,7 +95,7 @@ document.documentElement.addEventListener(
 }});
 
 // Create new Tone.js Player with clap sound and connect to Master Output
-var player = new Tone.Player("./sounds/clap.wav").toMaster();
+var player = new Tone.Player("./sounds/oink.wav").toMaster();
 
 // TriggerSound Play
 function triggerSound(time){
