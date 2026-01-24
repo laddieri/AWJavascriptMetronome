@@ -5,20 +5,76 @@ var secondsPerBeat = 1;
 var cachedBPM = 60;
 var pig1;
 var pig2;
+var animationMode = 'bouncing'; // 'bouncing' or 'classic'
+
+// Easing functions for smooth animations
+const Easing = {
+  // Exponential ease out - perfect for gravity/falling
+  easeOutExpo: function(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  },
+
+  // Bounce ease out - realistic bouncing effect
+  easeOutBounce: function(t) {
+    const n1 = 7.5625;
+    const d1 = 2.75;
+
+    if (t < 1 / d1) {
+      return n1 * t * t;
+    } else if (t < 2 / d1) {
+      return n1 * (t -= 1.5 / d1) * t + 0.75;
+    } else if (t < 2.5 / d1) {
+      return n1 * (t -= 2.25 / d1) * t + 0.9375;
+    } else {
+      return n1 * (t -= 2.625 / d1) * t + 0.984375;
+    }
+  },
+
+  // Quadratic ease in-out for smooth acceleration
+  easeInOutQuad: function(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+};
 
 class Pig {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
+    this.y = 200; // Base Y position
+    this.baseY = 200;
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    // Calculate normalized time (0 to 1) within the beat
+    const framesPerBeat = secondsPerBeat * 60;
+    const normalizedTime = Math.min(t / framesPerBeat, 1);
+
+    if (animationMode === 'classic') {
+      // Original parabolic horizontal motion
+      this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+      this.y = this.baseY;
+    } else if (animationMode === 'bouncing') {
+      // Improved bouncing animation with realistic physics
+
+      // Horizontal movement: smooth ease in-out for natural motion
+      const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
+      const maxHorizontalDistance = 280;
+      this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
+
+      // Vertical bouncing: exponential ease with bounce effect
+      const bounceHeight = 150;
+
+      // Use bounce easing for realistic bounce physics
+      const bounceProgress = Easing.easeOutBounce(normalizedTime);
+
+      // Create upward arc (inverted bounce)
+      this.y = this.baseY - (bounceHeight * bounceProgress);
+    }
   }
 
   display(){
-      var bodyX = this.x; // variabels
-      var bodyY = 200;
+      var bodyX = this.x; // variables
+      var bodyY = this.y;
       fill(250, 192, 196); //legs
     rect(bodyX+18, bodyY+73, 18, 68);
     rect(bodyX-47, bodyY+71, 18, 68);
@@ -103,6 +159,11 @@ document.querySelector('tone-slider').addEventListener('change', e => {
   Tone.Transport.bpm.value = e.detail;
   cachedBPM = e.detail;
   secondsPerBeat = 1 / (e.detail / 60);
+})
+
+//change animation mode
+document.querySelector('#animation-mode').addEventListener('change', e => {
+  animationMode = e.target.value;
 })
 
 
