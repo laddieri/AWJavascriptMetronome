@@ -110,7 +110,8 @@ document.querySelector('tone-slider').addEventListener('change', e => {
 function setup() {
   var xwidth=640
   var yheight=480;
-  createCanvas(xwidth, yheight);
+  var canvas = createCanvas(xwidth, yheight);
+  canvas.parent(document.querySelector('.canvas-wrapper'));
   frameRate(60);
   xpos=xwidth/2+rad;
 
