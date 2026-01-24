@@ -55,21 +55,15 @@ class Pig {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      // Improved bouncing animation with realistic physics
+      // Improved horizontal animation with smooth easing
 
       // Horizontal movement: smooth ease in-out for natural motion
       const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
       const maxHorizontalDistance = 280;
       this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      // Vertical bouncing: exponential ease with bounce effect
-      const bounceHeight = 150;
-
-      // Use bounce easing for realistic bounce physics
-      const bounceProgress = Easing.easeOutBounce(normalizedTime);
-
-      // Create upward arc (inverted bounce)
-      this.y = this.baseY - (bounceHeight * bounceProgress);
+      // No vertical movement - keep at base position
+      this.y = this.baseY;
     }
   }
 
@@ -133,21 +127,15 @@ class Cat {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      // Improved bouncing animation with realistic physics
+      // Improved horizontal animation with smooth easing
 
       // Horizontal movement: smooth ease in-out for natural motion
       const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
       const maxHorizontalDistance = 280;
       this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      // Vertical bouncing: exponential ease with bounce effect
-      const bounceHeight = 150;
-
-      // Use bounce easing for realistic bounce physics
-      const bounceProgress = Easing.easeOutBounce(normalizedTime);
-
-      // Create upward arc (inverted bounce)
-      this.y = this.baseY - (bounceHeight * bounceProgress);
+      // No vertical movement - keep at base position
+      this.y = this.baseY;
     }
   }
 
@@ -228,9 +216,8 @@ class Dog {
       const maxHorizontalDistance = 280;
       this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      const bounceHeight = 150;
-      const bounceProgress = Easing.easeOutBounce(normalizedTime);
-      this.y = this.baseY - (bounceHeight * bounceProgress);
+      // No vertical movement - keep at base position
+      this.y = this.baseY;
     }
   }
 
@@ -307,9 +294,8 @@ class Bird {
       const maxHorizontalDistance = 280;
       this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      const bounceHeight = 150;
-      const bounceProgress = Easing.easeOutBounce(normalizedTime);
-      this.y = this.baseY - (bounceHeight * bounceProgress);
+      // No vertical movement - keep at base position
+      this.y = this.baseY;
     }
   }
 
