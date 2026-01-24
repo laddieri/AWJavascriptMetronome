@@ -419,17 +419,6 @@ document.querySelector('tone-slider').addEventListener('change', e => {
   secondsPerBeat = 1 / (e.detail / 60);
 })
 
-//change animation mode
-document.querySelector('#animation-mode').addEventListener('change', e => {
-  animationMode = e.target.value;
-})
-
-//change animal type
-document.querySelector('#animal-selector').addEventListener('change', e => {
-  animalType = e.target.value;
-  createAnimals(); // Recreate animals when selection changes
-})
-
 // Function to create animals based on selected type
 function createAnimals() {
   switch(animalType) {
@@ -464,6 +453,16 @@ function setup() {
 
   // Create 2 animal instances
   createAnimals();
+
+  // Setup event listeners after DOM is ready
+  document.querySelector('#animation-mode').addEventListener('change', e => {
+    animationMode = e.target.value;
+  });
+
+  document.querySelector('#animal-selector').addEventListener('change', e => {
+    animalType = e.target.value;
+    createAnimals(); // Recreate animals when selection changes
+  });
 }
 
 
