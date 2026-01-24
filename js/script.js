@@ -1,37 +1,10 @@
 var xpos=0;
 var rad=50;
 var t=0;
-var secondsPerBeat;
-var bpm = 60;
-var ball1;
-var ball2;
-// var running;
-
-// Ball class to allow for two bouncing balls at once
-class Ball {
-
-  constructor(radius, direction){
-    this.radius = radius;
-    this.direction=direction;
-    this.x = 100;
-  };
-
-  ballmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
-  }
-
-  display(){
-    stroke(0,0,0);
-    fill('rgb(241, 194, 125)');
-    ellipse(this.x,100,this.radius,this.radius);
-    ellipse(this.x+30*this.direction,55,this.radius/2.5,this.radius/8)
-    ellipse(this.x+50*this.direction,75,this.radius/2.5,this.radius/8);
-    ellipse(this.x+50*this.direction,95,this.radius/2.5,this.radius/8);
-    ellipse(this.x+50*this.direction,115,this.radius/2.5,this.radius/8);
-    ellipse(this.x+50*this.direction,135,this.radius/2.5,this.radius/8);
-  }
-
-}
+var secondsPerBeat = 1;
+var cachedBPM = 60;
+var pig1;
+var pig2;
 
 class Pig {
   constructor(direction){
@@ -106,11 +79,16 @@ function triggerSound(time){
 Tone.Transport.schedule(function(time){
   triggerSound(time)
 
-  // checks the tempo slider every time the metronome clicks and set t=0 in order to sync animation
+  // Reset animation timer to sync with beat
   Tone.Draw.schedule(function(){
-      document.querySelector('tone-slider').value=Tone.Transport.bpm.value;
       t=0;
-      })
+      // Update cached BPM only if it changed
+      const currentBPM = Tone.Transport.bpm.value;
+      if (cachedBPM !== currentBPM) {
+        cachedBPM = currentBPM;
+        secondsPerBeat = 1 / (currentBPM / 60);
+      }
+  })
 
 }, 0)
 Tone.Transport.loop = true;
@@ -120,21 +98,13 @@ Tone.Transport.loopEnd = '4n';
 //start/stop the transport
 document.querySelector('tone-play-toggle').addEventListener('change', e => Tone.Transport.toggle())
 
-// //start/stop the transport
-// document.querySelector('tone-play-toggle').addEventListener('change', function (e){
-//   Tone.Transport.toggle()
-//   running = !running;
-// });
+//update BPM from slider
+document.querySelector('tone-slider').addEventListener('change', e => {
+  Tone.Transport.bpm.value = e.detail;
+  cachedBPM = e.detail;
+  secondsPerBeat = 1 / (e.detail / 60);
+})
 
-//start/stop the transport
-document.querySelector('tone-slider').addEventListener('change', e => Tone.Transport.bpm.value = e.detail)
-
-
-// Calculate seconds per beat from BPM
-function updateTime() {
-requestAnimationFrame(updateTime)
-  secondsPerBeat=1/(Tone.Transport.bpm.value/60);
-}
 
 // Setup p5.js canvas
 function setup() {
@@ -144,11 +114,7 @@ function setup() {
   frameRate(60);
   xpos=xwidth/2+rad;
 
-
-  // Create 2 instances of ball class
-  // ball1 = new Ball(100, 1);
-  // ball2 = new Ball(100,-1);
-
+  // Create 2 pig instances
   pig1 = new Pig(1);
   pig2 = new Pig(-1)
 }
@@ -161,18 +127,9 @@ function draw() {
       background('#696969');
   }
 
-
   t++;
-  // ball1.display();
-  // ball1.ballmove();
-  // ball2.display();
-  // ball2.ballmove();
   pig1.display();
   pig1.pigmove();
   pig2.display();
   pig2.pigmove();
 }
-
-
-
-updateTime()
