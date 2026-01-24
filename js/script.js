@@ -34,6 +34,14 @@ const Easing = {
   // Quadratic ease in-out for smooth acceleration
   easeInOutQuad: function(t) {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  },
+
+  // Parabolic motion - slow at edges, fastest at center (clapping hands)
+  // Velocity is zero at t=0 and t=1, maximum at t=0.5
+  parabolicClap: function(t) {
+    // This function: 3t² - 2t³
+    // Has velocity: 6t - 6t² = 6t(1-t) which is max at t=0.5
+    return 3 * t * t - 2 * t * t * t;
   }
 };
 
@@ -55,14 +63,21 @@ class Pig {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      // Improved horizontal animation with smooth easing
+      // Parabolic motion - like clapping hands
+      // Objects start at edges, accelerate toward center, move fastest at center, then decelerate back to edges
 
-      // Horizontal movement: smooth ease in-out for natural motion
-      const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
       const maxHorizontalDistance = 280;
-      this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      // No vertical movement - keep at base position
+      // Use parabolic function: progress goes 0->1 with velocity max at t=0.5
+      const progress = Easing.parabolicClap(normalizedTime);
+
+      // Convert progress (0 to 1) to displacement (-1 to 1)
+      // At progress=0: displacement=-1 (left edge)
+      // At progress=0.5: displacement=0 (center, moving fastest)
+      // At progress=1: displacement=1 (right edge)
+      const displacement = 2 * progress - 1;
+
+      this.x = (640/2) + (this.direction * maxHorizontalDistance * displacement);
       this.y = this.baseY;
     }
   }
@@ -127,14 +142,21 @@ class Cat {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      // Improved horizontal animation with smooth easing
+      // Parabolic motion - like clapping hands
+      // Objects start at edges, accelerate toward center, move fastest at center, then decelerate back to edges
 
-      // Horizontal movement: smooth ease in-out for natural motion
-      const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
       const maxHorizontalDistance = 280;
-      this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
 
-      // No vertical movement - keep at base position
+      // Use parabolic function: progress goes 0->1 with velocity max at t=0.5
+      const progress = Easing.parabolicClap(normalizedTime);
+
+      // Convert progress (0 to 1) to displacement (-1 to 1)
+      // At progress=0: displacement=-1 (left edge)
+      // At progress=0.5: displacement=0 (center, moving fastest)
+      // At progress=1: displacement=1 (right edge)
+      const displacement = 2 * progress - 1;
+
+      this.x = (640/2) + (this.direction * maxHorizontalDistance * displacement);
       this.y = this.baseY;
     }
   }
@@ -212,11 +234,21 @@ class Dog {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
-      const maxHorizontalDistance = 280;
-      this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
+      // Parabolic motion - like clapping hands
+      // Objects start at edges, accelerate toward center, move fastest at center, then decelerate back to edges
 
-      // No vertical movement - keep at base position
+      const maxHorizontalDistance = 280;
+
+      // Use parabolic function: progress goes 0->1 with velocity max at t=0.5
+      const progress = Easing.parabolicClap(normalizedTime);
+
+      // Convert progress (0 to 1) to displacement (-1 to 1)
+      // At progress=0: displacement=-1 (left edge)
+      // At progress=0.5: displacement=0 (center, moving fastest)
+      // At progress=1: displacement=1 (right edge)
+      const displacement = 2 * progress - 1;
+
+      this.x = (640/2) + (this.direction * maxHorizontalDistance * displacement);
       this.y = this.baseY;
     }
   }
@@ -290,11 +322,21 @@ class Bird {
       this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
       this.y = this.baseY;
     } else if (animationMode === 'bouncing') {
-      const horizontalProgress = Easing.easeInOutQuad(normalizedTime);
-      const maxHorizontalDistance = 280;
-      this.x = (640/2) + (this.direction * maxHorizontalDistance * (1 - 2 * Math.abs(horizontalProgress - 0.5)));
+      // Parabolic motion - like clapping hands
+      // Objects start at edges, accelerate toward center, move fastest at center, then decelerate back to edges
 
-      // No vertical movement - keep at base position
+      const maxHorizontalDistance = 280;
+
+      // Use parabolic function: progress goes 0->1 with velocity max at t=0.5
+      const progress = Easing.parabolicClap(normalizedTime);
+
+      // Convert progress (0 to 1) to displacement (-1 to 1)
+      // At progress=0: displacement=-1 (left edge)
+      // At progress=0.5: displacement=0 (center, moving fastest)
+      // At progress=1: displacement=1 (right edge)
+      const displacement = 2 * progress - 1;
+
+      this.x = (640/2) + (this.direction * maxHorizontalDistance * displacement);
       this.y = this.baseY;
     }
   }
