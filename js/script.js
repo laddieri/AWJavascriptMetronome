@@ -381,12 +381,62 @@ document.documentElement.addEventListener(
     Tone.Transport.bpm.value = 60;
 }});
 
-// Create new Tone.js Player with clap sound and connect to Master Output
-var player = new Tone.Player("./sounds/oink.wav").toMaster();
+// Create sound players and synthesizers for different animals
+var pigPlayer = new Tone.Player("./sounds/oink.wav").toMaster();
 
-// TriggerSound Play
+// Cat meow synth - higher pitched, smooth envelope
+var catSynth = new Tone.Synth({
+  oscillator: { type: "triangle" },
+  envelope: {
+    attack: 0.01,
+    decay: 0.15,
+    sustain: 0.2,
+    release: 0.1
+  }
+}).toMaster();
+
+// Dog bark synth - lower, sharp attack
+var dogSynth = new Tone.MembraneSynth({
+  pitchDecay: 0.05,
+  octaves: 4,
+  oscillator: { type: "square" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.2,
+    sustain: 0,
+    release: 0.2
+  }
+}).toMaster();
+
+// Bird chirp synth - very high, quick
+var birdSynth = new Tone.Synth({
+  oscillator: { type: "sine" },
+  envelope: {
+    attack: 0.002,
+    decay: 0.1,
+    sustain: 0.0,
+    release: 0.05
+  }
+}).toMaster();
+
+// TriggerSound Play - switches based on animal type
 function triggerSound(time){
-	player.start(time)
+  switch(animalType) {
+    case 'pig':
+      pigPlayer.start(time);
+      break;
+    case 'cat':
+      catSynth.triggerAttackRelease("A4", "16n", time);
+      break;
+    case 'dog':
+      dogSynth.triggerAttackRelease("C2", "8n", time);
+      break;
+    case 'bird':
+      birdSynth.triggerAttackRelease("E6", "32n", time);
+      break;
+    default:
+      pigPlayer.start(time);
+  }
 }
 
 // Schedule sound using Tone.js Transport Feature
