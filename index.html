@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pig Metronome</title>
+    <title>Animal Metronome</title>
     <link rel="stylesheet" href="stylesheet.css" type="text/css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,8 +12,8 @@
   <body>
     <div class="container">
       <header>
-        <h1>🐷 Pig Metronome</h1>
-        <p class="subtitle">Keep perfect time with bouncing pigs</p>
+        <h1>🎵 Animal Metronome</h1>
+        <p class="subtitle">Keep perfect time with bouncing animals</p>
       </header>
 
       <main>
@@ -25,6 +25,16 @@
           <div class="control-group">
             <label class="control-label">Tempo</label>
             <tone-slider label="bpm" min="60" max="240" exp="2" value="60"></tone-slider>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Animal</label>
+            <select id="animal-selector" class="animation-dropdown">
+              <option value="pig">🐷 Pig</option>
+              <option value="cat">🐱 Cat</option>
+              <option value="dog">🐶 Dog</option>
+              <option value="bird">🐦 Bird</option>
+            </select>
           </div>
 
           <div class="control-group">
