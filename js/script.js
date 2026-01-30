@@ -10,6 +10,10 @@ var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
 // Selfie capture variables
 var selfieImage = null;
 var cameraStream = null;
+var recordedSoundURL = null; // URL for recorded selfie sound
+var recordedSoundPlayer = null; // Tone.js Player for recorded sound
+var mediaRecorder = null;
+var audioChunks = [];
 
 // Advanced metronome settings
 var beatsPerMeasure = 4;
@@ -894,10 +898,86 @@ function capturePhoto() {
   closeCamera();
 }
 
+// Sound recording functions
+function startRecording() {
+  const recordBtn = document.getElementById('record-sound-btn');
+  const recordingStatus = document.getElementById('recording-status');
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        // Stop the audio stream
+        stream.getTracks().forEach(track => track.stop());
+
+        // Create audio blob and URL
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+        // Revoke old URL if exists
+        if (recordedSoundURL) {
+          URL.revokeObjectURL(recordedSoundURL);
+        }
+
+        recordedSoundURL = URL.createObjectURL(audioBlob);
+
+        // Create Tone.js Player with recorded sound
+        if (recordedSoundPlayer) {
+          recordedSoundPlayer.dispose();
+        }
+        recordedSoundPlayer = new Tone.Player(recordedSoundURL).toMaster();
+
+        recordingStatus.textContent = '✓ Sound recorded!';
+        recordingStatus.classList.remove('recording');
+      };
+
+      mediaRecorder.start();
+      recordBtn.textContent = '⏹ Stop Recording';
+      recordBtn.classList.add('recording');
+      recordingStatus.textContent = 'Recording...';
+      recordingStatus.classList.add('recording');
+
+      // Auto-stop after 2 seconds for a short sound
+      setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          stopRecording();
+        }
+      }, 2000);
+    })
+    .catch(err => {
+      console.error('Microphone access denied:', err);
+      recordingStatus.textContent = 'Microphone access denied';
+    });
+}
+
+function stopRecording() {
+  const recordBtn = document.getElementById('record-sound-btn');
+
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    recordBtn.textContent = '🎤 Record Sound';
+    recordBtn.classList.remove('recording');
+  }
+}
+
+function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
 // Initialize camera button listeners
 function initCameraListeners() {
   const captureBtn = document.getElementById('capture-btn');
   const cancelBtn = document.getElementById('cancel-btn');
+  const recordBtn = document.getElementById('record-sound-btn');
 
   if (captureBtn) {
     captureBtn.addEventListener('click', capturePhoto);
@@ -912,6 +992,9 @@ function initCameraListeners() {
         createAnimals();
       }
     });
+  }
+  if (recordBtn) {
+    recordBtn.addEventListener('click', toggleRecording);
   }
 }
 
@@ -1172,7 +1255,12 @@ function triggerSound(time, isAccent = false){
       owlSynth.triggerAttackRelease("D3", "4n", time);
       break;
     case 'selfie':
-      selfieSynth.triggerAttackRelease("8n", time);
+      // Use recorded sound if available, otherwise use default synth
+      if (recordedSoundPlayer && recordedSoundPlayer.loaded) {
+        recordedSoundPlayer.start(time);
+      } else {
+        selfieSynth.triggerAttackRelease("8n", time);
+      }
       break;
     default:
       pigPlayer.start(time);
