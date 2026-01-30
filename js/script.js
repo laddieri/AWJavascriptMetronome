@@ -7,6 +7,37 @@ var animal1;
 var animal2;
 var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
 
+// Canvas dimensions (will be set dynamically)
+var canvasWidth = 640;
+var canvasHeight = 480;
+var canvasScale = 1;
+
+// Calculate responsive canvas size
+function getCanvasSize() {
+  const wrapper = document.querySelector('.canvas-wrapper');
+  if (!wrapper) return { width: 640, height: 480, scale: 1 };
+
+  const maxWidth = wrapper.clientWidth - 32; // Account for padding
+  const baseWidth = 640;
+  const baseHeight = 480;
+  const aspectRatio = baseWidth / baseHeight;
+
+  let newWidth = Math.min(maxWidth, baseWidth);
+  let newHeight = newWidth / aspectRatio;
+
+  // Ensure minimum size for very small screens
+  if (newWidth < 280) {
+    newWidth = 280;
+    newHeight = newWidth / aspectRatio;
+  }
+
+  return {
+    width: Math.floor(newWidth),
+    height: Math.floor(newHeight),
+    scale: newWidth / baseWidth
+  };
+}
+
 // Calculate animation position directly from Tone.js timing for perfect sync
 function getAnimationProgress() {
   if (Tone.Transport.state !== 'started') {
@@ -21,8 +52,11 @@ function getAnimalX(direction) {
   const progress = getAnimationProgress();
   // Sine wave: 0 at start, peaks at 0.5, returns to 0 at 1
   // This creates smooth motion where animals meet at center on the beat
-  const displacement = Math.sin(progress * Math.PI) * 200;
-  return direction * displacement + (640 / 2);
+  // Use base coordinate system (640x480) - scale() handles actual sizing
+  const baseWidth = 640;
+  const baseDisplacement = 200;
+  const displacement = Math.sin(progress * Math.PI) * baseDisplacement;
+  return direction * displacement + (baseWidth / 2);
 }
 
 // Easing functions for smooth animations
@@ -893,12 +927,16 @@ function createAnimals() {
 
 // Setup p5.js canvas
 function setup() {
-  var xwidth=640
-  var yheight=480;
-  var canvas = createCanvas(xwidth, yheight);
+  // Calculate responsive canvas size
+  const size = getCanvasSize();
+  canvasWidth = size.width;
+  canvasHeight = size.height;
+  canvasScale = size.scale;
+
+  var canvas = createCanvas(canvasWidth, canvasHeight);
   canvas.parent(document.querySelector('.canvas-wrapper'));
   frameRate(60);
-  xpos=xwidth/2+rad;
+  xpos = canvasWidth / 2 + rad;
 
   // Create 2 animal instances
   createAnimals();
@@ -907,6 +945,15 @@ function setup() {
     animalType = e.target.value;
     createAnimals(); // Recreate animals when selection changes
   });
+}
+
+// Handle window resize for responsive canvas
+function windowResized() {
+  const size = getCanvasSize();
+  canvasWidth = size.width;
+  canvasHeight = size.height;
+  canvasScale = size.scale;
+  resizeCanvas(canvasWidth, canvasHeight);
 }
 
 
@@ -919,10 +966,16 @@ function draw() {
     background('#696969');
   }
 
+  // Scale all drawing to fit responsive canvas
+  push();
+  scale(canvasScale);
+
   // Update positions - getAnimalX handles both playing and stopped states
   animal1.pigmove();
   animal2.pigmove();
 
   animal1.display();
   animal2.display();
+
+  pop();
 }
