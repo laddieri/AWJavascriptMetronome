@@ -1076,25 +1076,23 @@ var subdivisionSynth = new Tone.Synth({
 }).toMaster();
 subdivisionSynth.volume.value = -12; // Quieter than main beat
 
-// Accent synth - louder click for beat 1
-var accentSynth = new Tone.MembraneSynth({
-  pitchDecay: 0.01,
-  octaves: 2,
-  oscillator: { type: "sine" },
+// Accent synth - louder, higher-pitched click for beat 1
+var accentSynth = new Tone.Synth({
+  oscillator: { type: "triangle" },
   envelope: {
     attack: 0.001,
-    decay: 0.2,
+    decay: 0.1,
     sustain: 0,
-    release: 0.1
+    release: 0.05
   }
 }).toMaster();
-accentSynth.volume.value = 3; // Louder than main beat
+accentSynth.volume.value = 0; // Audible accent level
 
 // TriggerSound Play - switches based on animal type
 function triggerSound(time, isAccent = false){
-  // Play accent on beat 1 if enabled
+  // Play accent on beat 1 if enabled (higher pitched click)
   if (isAccent && accentEnabled) {
-    accentSynth.triggerAttackRelease("C2", "16n", time);
+    accentSynth.triggerAttackRelease("G5", "16n", time);
   }
 
   switch(animalType) {
@@ -1168,6 +1166,7 @@ function scheduleMainBeat() {
 }
 
 // Schedule subdivisions for a single beat
+// Uses direct synth triggering with audio context time for precise timing
 function scheduleSubdivisionsForBeat(beatTime) {
   if (subdivision === 'none') return;
 
@@ -1176,32 +1175,20 @@ function scheduleSubdivisionsForBeat(beatTime) {
   switch(subdivision) {
     case 'eighth':
       // One subdivision at the halfway point
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + beatDuration / 2);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 2);
       break;
 
     case 'triplet':
       // Two subdivisions dividing beat into thirds
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + beatDuration / 3);
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + (beatDuration * 2) / 3);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 3);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + (beatDuration * 2) / 3);
       break;
 
     case 'sixteenth':
       // Three subdivisions dividing beat into quarters
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + beatDuration / 4);
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + beatDuration / 2);
-      Tone.Transport.scheduleOnce(function(time) {
-        triggerSubdivision(time);
-      }, beatTime + (beatDuration * 3) / 4);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 4);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 2);
+      subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + (beatDuration * 3) / 4);
       break;
   }
 }
