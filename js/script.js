@@ -1200,6 +1200,9 @@ function scheduleMainBeat() {
     // Store beat number before it gets incremented
     const beatToSpeak = currentBeat + 1; // 1-indexed for speaking
 
+    // Speak beat number immediately (before Tone.Draw) to compensate for speech synthesis latency
+    speakBeatNumber(beatToSpeak);
+
     // Reset animation timer to sync with beat
     Tone.Draw.schedule(function(){
       t = 0;
@@ -1211,8 +1214,6 @@ function scheduleMainBeat() {
         cachedBPM = currentBPM;
         secondsPerBeat = 1 / (currentBPM / 60);
       }
-      // Speak the beat number if enabled
-      speakBeatNumber(beatToSpeak);
     }, time);
 
     // Advance beat counter
