@@ -613,6 +613,49 @@ footer p {
   background: #cbd5e0;
 }
 
+.camera-btn.record {
+  background: #48bb78;
+  color: white;
+}
+
+.camera-btn.record:hover {
+  background: #38a169;
+}
+
+.camera-btn.record.recording {
+  background: #e53e3e;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.sound-record-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.sound-record-label {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 12px;
+}
+
+.recording-status {
+  font-size: 0.8rem;
+  color: #48bb78;
+  margin-top: 8px;
+  min-height: 1.2em;
+}
+
+.recording-status.recording {
+  color: #e53e3e;
+}
+
 @media (max-width: 480px) {
   .camera-container {
     padding: 16px;
