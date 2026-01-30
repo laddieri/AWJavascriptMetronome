@@ -17,7 +17,22 @@ var currentBeat = 0;
 var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
 var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
+var voiceCountEnabled = false; // Count beats aloud
 var lastBeatTime = 0; // Track when last beat fired for animation sync
+
+// Voice counting with Web Speech API
+function speakBeatNumber(beatNumber) {
+  if (!voiceCountEnabled) return;
+  if ('speechSynthesis' in window) {
+    // Cancel any ongoing speech to prevent overlap
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(String(beatNumber));
+    utterance.rate = 1.5; // Speak faster for quick beats
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    window.speechSynthesis.speak(utterance);
+  }
+}
 
 // Canvas dimensions (will be set dynamically)
 var canvasWidth = 640;
@@ -960,6 +975,14 @@ function initSettingsListeners() {
       flashEnabled = e.target.checked;
     });
   }
+
+  // Voice count toggle
+  const voiceCountCheckbox = document.getElementById('voice-count-enabled');
+  if (voiceCountCheckbox) {
+    voiceCountCheckbox.addEventListener('change', (e) => {
+      voiceCountEnabled = e.target.checked;
+    });
+  }
 }
 
 // Start Audio Context on Mouseclick
@@ -1162,6 +1185,9 @@ function scheduleMainBeat() {
     // Schedule subdivisions for this beat
     scheduleSubdivisionsForBeat(time);
 
+    // Store beat number before it gets incremented
+    const beatToSpeak = currentBeat + 1; // 1-indexed for speaking
+
     // Reset animation timer to sync with beat
     Tone.Draw.schedule(function(){
       t = 0;
@@ -1173,6 +1199,8 @@ function scheduleMainBeat() {
         cachedBPM = currentBPM;
         secondsPerBeat = 1 / (currentBPM / 60);
       }
+      // Speak the beat number if enabled
+      speakBeatNumber(beatToSpeak);
     }, time);
 
     // Advance beat counter
