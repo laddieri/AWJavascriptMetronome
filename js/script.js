@@ -15,6 +15,7 @@ var cameraStream = null;
 var beatsPerMeasure = 4;
 var currentBeat = 0;
 var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
+var animalSoundEnabled = true; // Play animal sound on beat
 var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
@@ -961,6 +962,14 @@ function initSettingsListeners() {
     });
   }
 
+  // Animal sound toggle
+  const animalSoundCheckbox = document.getElementById('animal-sound-enabled');
+  if (animalSoundCheckbox) {
+    animalSoundCheckbox.addEventListener('change', (e) => {
+      animalSoundEnabled = e.target.checked;
+    });
+  }
+
   // Accent toggle
   if (accentCheckbox) {
     accentCheckbox.addEventListener('change', (e) => {
@@ -1130,6 +1139,9 @@ function triggerSound(time, isAccent = false){
   if (isAccent && accentEnabled) {
     accentSynth.triggerAttackRelease("G5", "16n", time);
   }
+
+  // Play animal sound if enabled
+  if (!animalSoundEnabled) return;
 
   switch(animalType) {
     case 'pig':
