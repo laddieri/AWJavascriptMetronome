@@ -443,9 +443,18 @@ function draw() {
       background('#696969');
   }
 
-  t++;
+  // Only animate when transport is running
+  if (Tone.Transport.state === 'started') {
+    t++;
+    animal1.pigmove();
+    animal2.pigmove();
+  } else {
+    // Reset animation when stopped
+    t = 0;
+    animal1.x = 640 / 2;
+    animal2.x = 640 / 2;
+  }
+
   animal1.display();
-  animal1.pigmove();
   animal2.display();
-  animal2.pigmove();
 }
