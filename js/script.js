@@ -11,6 +11,12 @@ var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
 var selfieImage = null;
 var cameraStream = null;
 
+// Advanced metronome settings
+var beatsPerMeasure = 4;
+var currentBeat = 0;
+var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
+var accentEnabled = true;
+
 // Canvas dimensions (will be set dynamically)
 var canvasWidth = 640;
 var canvasHeight = 480;
@@ -888,6 +894,61 @@ function initCameraListeners() {
   }
 }
 
+// Initialize settings modal listeners
+function initSettingsListeners() {
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsCloseBtn = document.getElementById('settings-close-btn');
+  const timeSignatureSelect = document.getElementById('time-signature');
+  const subdivisionSelect = document.getElementById('subdivision');
+  const accentCheckbox = document.getElementById('accent-enabled');
+
+  // Open settings modal
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      settingsModal.classList.remove('hidden');
+    });
+  }
+
+  // Close settings modal
+  if (settingsCloseBtn) {
+    settingsCloseBtn.addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+  }
+
+  // Close modal when clicking outside
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Time signature change
+  if (timeSignatureSelect) {
+    timeSignatureSelect.addEventListener('change', (e) => {
+      beatsPerMeasure = parseInt(e.target.value);
+      currentBeat = 0; // Reset to beat 1
+    });
+  }
+
+  // Subdivision change
+  if (subdivisionSelect) {
+    subdivisionSelect.addEventListener('change', (e) => {
+      subdivision = e.target.value;
+    });
+  }
+
+  // Accent toggle
+  if (accentCheckbox) {
+    accentCheckbox.addEventListener('change', (e) => {
+      accentEnabled = e.target.checked;
+    });
+  }
+}
+
 // Start Audio Context on Mouseclick
 document.documentElement.addEventListener(
   "mousedown", function(){
@@ -1003,8 +1064,39 @@ var selfieSynth = new Tone.NoiseSynth({
   }
 }).toMaster();
 
+// Subdivision click synth - soft tick for subdivisions
+var subdivisionSynth = new Tone.Synth({
+  oscillator: { type: "triangle" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.05,
+    sustain: 0,
+    release: 0.05
+  }
+}).toMaster();
+subdivisionSynth.volume.value = -12; // Quieter than main beat
+
+// Accent synth - louder click for beat 1
+var accentSynth = new Tone.MembraneSynth({
+  pitchDecay: 0.01,
+  octaves: 2,
+  oscillator: { type: "sine" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.2,
+    sustain: 0,
+    release: 0.1
+  }
+}).toMaster();
+accentSynth.volume.value = 3; // Louder than main beat
+
 // TriggerSound Play - switches based on animal type
-function triggerSound(time){
+function triggerSound(time, isAccent = false){
+  // Play accent on beat 1 if enabled
+  if (isAccent && accentEnabled) {
+    accentSynth.triggerAttackRelease("C2", "16n", time);
+  }
+
   switch(animalType) {
     case 'pig':
       pigPlayer.start(time);
@@ -1041,28 +1133,91 @@ function triggerSound(time){
   }
 }
 
-// Schedule sound using Tone.js Transport Feature
-Tone.Transport.schedule(function(time){
-  triggerSound(time)
+// Play subdivision sound
+function triggerSubdivision(time) {
+  subdivisionSynth.triggerAttackRelease("C5", "32n", time);
+}
 
-  // Reset animation timer to sync with beat
-  Tone.Draw.schedule(function(){
-      t=0;
+// Subdivision event IDs (to cancel when settings change)
+var subdivisionEvents = [];
+
+// Schedule main beat sound
+function scheduleMainBeat() {
+  Tone.Transport.scheduleRepeat(function(time) {
+    // Determine if this is beat 1 (accented)
+    const isAccent = currentBeat === 0;
+    triggerSound(time, isAccent);
+
+    // Schedule subdivisions for this beat
+    scheduleSubdivisionsForBeat(time);
+
+    // Reset animation timer to sync with beat
+    Tone.Draw.schedule(function(){
+      t = 0;
       // Update cached BPM only if it changed
       const currentBPM = Tone.Transport.bpm.value;
       if (cachedBPM !== currentBPM) {
         cachedBPM = currentBPM;
         secondsPerBeat = 1 / (currentBPM / 60);
       }
-  })
+    }, time);
 
-}, 0)
-Tone.Transport.loop = true;
-Tone.Transport.loopEnd = '4n';
+    // Advance beat counter
+    currentBeat = (currentBeat + 1) % beatsPerMeasure;
+  }, "4n");
+}
+
+// Schedule subdivisions for a single beat
+function scheduleSubdivisionsForBeat(beatTime) {
+  if (subdivision === 'none') return;
+
+  const beatDuration = Tone.Time("4n").toSeconds();
+
+  switch(subdivision) {
+    case 'eighth':
+      // One subdivision at the halfway point
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + beatDuration / 2);
+      break;
+
+    case 'triplet':
+      // Two subdivisions dividing beat into thirds
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + beatDuration / 3);
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + (beatDuration * 2) / 3);
+      break;
+
+    case 'sixteenth':
+      // Three subdivisions dividing beat into quarters
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + beatDuration / 4);
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + beatDuration / 2);
+      Tone.Transport.scheduleOnce(function(time) {
+        triggerSubdivision(time);
+      }, beatTime + (beatDuration * 3) / 4);
+      break;
+  }
+}
+
+// Initialize the main beat schedule
+scheduleMainBeat();
 
 
 //start/stop the transport
-document.querySelector('tone-play-toggle').addEventListener('change', e => Tone.Transport.toggle())
+document.querySelector('tone-play-toggle').addEventListener('change', e => {
+  Tone.Transport.toggle();
+  // Reset beat counter when stopping so next play starts on beat 1
+  if (Tone.Transport.state !== 'started') {
+    currentBeat = 0;
+  }
+})
 
 //update BPM from slider
 document.querySelector('tone-slider').addEventListener('change', e => {
@@ -1136,6 +1291,9 @@ function setup() {
 
   // Initialize camera listeners for selfie feature
   initCameraListeners();
+
+  // Initialize settings modal listeners
+  initSettingsListeners();
 
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;

@@ -46,12 +46,58 @@
           <div class="control-group">
             <tone-play-toggle class='toggle'></tone-play-toggle>
           </div>
+
+          <div class="control-group settings-group">
+            <button id="settings-btn" class="settings-btn" title="Advanced Settings">⚙️</button>
+          </div>
         </div>
       </main>
 
       <footer>
         <p>Powered by Tone.js & p5.js</p>
       </footer>
+    </div>
+
+    <!-- Advanced Settings Modal -->
+    <div id="settings-modal" class="settings-modal hidden">
+      <div class="settings-container">
+        <h2>Advanced Settings</h2>
+
+        <div class="setting-group">
+          <label class="setting-label">Time Signature</label>
+          <select id="time-signature" class="setting-select">
+            <option value="4">4/4</option>
+            <option value="3">3/4</option>
+            <option value="2">2/4</option>
+            <option value="6">6/8</option>
+            <option value="5">5/4</option>
+            <option value="7">7/8</option>
+          </select>
+          <p class="setting-hint">Beat 1 will be accented</p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">Subdivision</label>
+          <select id="subdivision" class="setting-select">
+            <option value="none">None (quarter notes)</option>
+            <option value="eighth">8th notes</option>
+            <option value="triplet">Triplets</option>
+            <option value="sixteenth">16th notes</option>
+          </select>
+          <p class="setting-hint">Add notes between beats</p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">
+            <input type="checkbox" id="accent-enabled" checked>
+            Accent beat 1
+          </label>
+        </div>
+
+        <div class="settings-buttons">
+          <button id="settings-close-btn" class="settings-btn-close">Done</button>
+        </div>
+      </div>
     </div>
 
     <!-- Camera Modal for Selfie -->
