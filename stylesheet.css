@@ -656,6 +656,26 @@ footer p {
   color: #e53e3e;
 }
 
+/* Selfie Options */
+.selfie-options {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.selfie-option-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.selfie-option-label input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
 @media (max-width: 480px) {
   .camera-container {
     padding: 16px;

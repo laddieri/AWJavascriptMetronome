@@ -14,6 +14,7 @@ var recordedSoundURL = null; // URL for recorded selfie sound
 var recordedSoundPlayer = null; // Tone.js Player for recorded sound
 var mediaRecorder = null;
 var audioChunks = [];
+var mirrorSelfies = true; // When true, selfie images face each other
 
 // Advanced metronome settings
 var beatsPerMeasure = 4;
@@ -800,10 +801,20 @@ class Selfie {
       drawingContext.arc(bodyX, bodyY, diameter / 2, 0, Math.PI * 2);
       drawingContext.clip();
 
-      // Draw the selfie image (mirrored)
+      // Draw the selfie image
+      // When mirrorSelfies is true, mirror based on direction so images face each other
+      // direction 1 = right side, direction -1 = left side
       push();
       translate(bodyX, bodyY);
-      scale(-1, 1); // Mirror horizontally
+      if (mirrorSelfies) {
+        // Mirror the right image (direction 1) so they face each other
+        if (this.direction === 1) {
+          scale(-1, 1);
+        }
+      } else {
+        // When not mirroring, show both images with same orientation (mirrored for natural selfie look)
+        scale(-1, 1);
+      }
       image(selfieImage, 0, 0, diameter, diameter);
       pop();
 
@@ -995,6 +1006,14 @@ function initCameraListeners() {
   }
   if (recordBtn) {
     recordBtn.addEventListener('click', toggleRecording);
+  }
+
+  // Mirror selfies checkbox
+  const mirrorCheckbox = document.getElementById('mirror-selfies');
+  if (mirrorCheckbox) {
+    mirrorCheckbox.addEventListener('change', (e) => {
+      mirrorSelfies = e.target.checked;
+    });
   }
 }
 
