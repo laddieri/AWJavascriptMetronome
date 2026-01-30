@@ -39,6 +39,7 @@
               <option value="penguin">🐧 Penguin</option>
               <option value="rabbit">🐰 Rabbit</option>
               <option value="owl">🦉 Owl</option>
+              <option value="selfie">📸 Selfie</option>
             </select>
           </div>
 
@@ -51,6 +52,22 @@
       <footer>
         <p>Powered by Tone.js & p5.js</p>
       </footer>
+    </div>
+
+    <!-- Camera Modal for Selfie -->
+    <div id="camera-modal" class="camera-modal hidden">
+      <div class="camera-container">
+        <h2>Take a Selfie</h2>
+        <p>Position your face in the circle</p>
+        <div class="camera-preview-wrapper">
+          <video id="camera-video" autoplay playsinline></video>
+          <div class="face-guide"></div>
+        </div>
+        <div class="camera-buttons">
+          <button id="capture-btn" class="camera-btn capture">📸 Capture</button>
+          <button id="cancel-btn" class="camera-btn cancel">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <script src="./js/Tone.js"></script>
