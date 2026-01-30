@@ -7,6 +7,10 @@ var animal1;
 var animal2;
 var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
 
+// Selfie capture variables
+var selfieImage = null;
+var cameraStream = null;
+
 // Canvas dimensions (will be set dynamically)
 var canvasWidth = 640;
 var canvasHeight = 480;
@@ -721,6 +725,169 @@ class Owl {
   }
 }
 
+class Selfie {
+  constructor(direction){
+    this.direction = direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+    this.size = 180; // Size of the circular face
+  }
+
+  pigmove(){
+    this.x = getAnimalX(this.direction);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    if (selfieImage) {
+      // Draw the selfie image in a circle
+      push();
+
+      // Create circular clipping mask
+      imageMode(CENTER);
+
+      // Draw circular border/background
+      fill(255);
+      stroke(102, 126, 234); // Purple border
+      strokeWeight(4);
+      ellipse(bodyX, bodyY, this.size + 8, this.size + 8);
+
+      // Clip to circle and draw image
+      // Use a graphics buffer for circular mask
+      let diameter = this.size;
+
+      // Draw the image
+      noStroke();
+
+      // Create circular clip using drawingContext
+      drawingContext.save();
+      drawingContext.beginPath();
+      drawingContext.arc(bodyX, bodyY, diameter / 2, 0, Math.PI * 2);
+      drawingContext.clip();
+
+      // Draw the selfie image (mirrored)
+      push();
+      translate(bodyX, bodyY);
+      scale(-1, 1); // Mirror horizontally
+      image(selfieImage, 0, 0, diameter, diameter);
+      pop();
+
+      drawingContext.restore();
+
+      pop();
+    } else {
+      // Placeholder when no selfie is captured
+      fill(200);
+      stroke(150);
+      strokeWeight(3);
+      ellipse(bodyX, bodyY, this.size, this.size);
+
+      // Draw camera icon placeholder
+      noStroke();
+      fill(120);
+      textAlign(CENTER, CENTER);
+      textSize(40);
+      text("📸", bodyX, bodyY);
+
+      textSize(14);
+      fill(100);
+      text("Select Selfie", bodyX, bodyY + 50);
+    }
+  }
+}
+
+// Camera functions
+function openCamera() {
+  const modal = document.getElementById('camera-modal');
+  const video = document.getElementById('camera-video');
+
+  modal.classList.remove('hidden');
+
+  // Request camera access
+  navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: 'user',
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    }
+  })
+  .then(stream => {
+    cameraStream = stream;
+    video.srcObject = stream;
+  })
+  .catch(err => {
+    console.error('Camera access denied:', err);
+    alert('Could not access camera. Please allow camera access and try again.');
+    closeCamera();
+  });
+}
+
+function closeCamera() {
+  const modal = document.getElementById('camera-modal');
+  const video = document.getElementById('camera-video');
+
+  modal.classList.add('hidden');
+
+  // Stop camera stream
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  video.srcObject = null;
+}
+
+function capturePhoto() {
+  const video = document.getElementById('camera-video');
+
+  // Create a canvas to capture the frame
+  const captureCanvas = document.createElement('canvas');
+  const size = Math.min(video.videoWidth, video.videoHeight);
+  captureCanvas.width = size;
+  captureCanvas.height = size;
+
+  const ctx = captureCanvas.getContext('2d');
+
+  // Calculate crop to get square from center
+  const offsetX = (video.videoWidth - size) / 2;
+  const offsetY = (video.videoHeight - size) / 2;
+
+  // Draw the center square of the video
+  ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
+
+  // Convert to p5.js image
+  selfieImage = loadImage(captureCanvas.toDataURL('image/png'), () => {
+    // Image loaded, recreate animals to use it
+    createAnimals();
+  });
+
+  closeCamera();
+}
+
+// Initialize camera button listeners
+function initCameraListeners() {
+  const captureBtn = document.getElementById('capture-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+
+  if (captureBtn) {
+    captureBtn.addEventListener('click', capturePhoto);
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      closeCamera();
+      // Revert to previous animal if no selfie was taken
+      if (!selfieImage) {
+        document.getElementById('animal-selector').value = 'pig';
+        animalType = 'pig';
+        createAnimals();
+      }
+    });
+  }
+}
+
 // Start Audio Context on Mouseclick
 document.documentElement.addEventListener(
   "mousedown", function(){
@@ -825,6 +992,17 @@ var owlSynth = new Tone.Synth({
   }
 }).toMaster();
 
+// Selfie clap synth - snappy percussive sound
+var selfieSynth = new Tone.NoiseSynth({
+  noise: { type: "white" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.15,
+    sustain: 0,
+    release: 0.1
+  }
+}).toMaster();
+
 // TriggerSound Play - switches based on animal type
 function triggerSound(time){
   switch(animalType) {
@@ -854,6 +1032,9 @@ function triggerSound(time){
       break;
     case 'owl':
       owlSynth.triggerAttackRelease("D3", "4n", time);
+      break;
+    case 'selfie':
+      selfieSynth.triggerAttackRelease("8n", time);
       break;
     default:
       pigPlayer.start(time);
@@ -925,6 +1106,10 @@ function createAnimals() {
       animal1 = new Owl(1);
       animal2 = new Owl(-1);
       break;
+    case 'selfie':
+      animal1 = new Selfie(1);
+      animal2 = new Selfie(-1);
+      break;
     case 'pig':
     default:
       animal1 = new Pig(1);
@@ -949,8 +1134,17 @@ function setup() {
   // Create 2 animal instances
   createAnimals();
 
+  // Initialize camera listeners for selfie feature
+  initCameraListeners();
+
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
+
+    // Open camera when selfie is selected (if no selfie captured yet)
+    if (animalType === 'selfie' && !selfieImage) {
+      openCamera();
+    }
+
     createAnimals(); // Recreate animals when selection changes
   });
 }
