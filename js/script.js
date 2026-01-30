@@ -16,6 +16,7 @@ var beatsPerMeasure = 4;
 var currentBeat = 0;
 var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
 var accentEnabled = true;
+var lastBeatTime = 0; // Track when last beat fired for animation sync
 
 // Canvas dimensions (will be set dynamically)
 var canvasWidth = 640;
@@ -56,14 +57,16 @@ function getCanvasSize() {
   };
 }
 
-// Calculate animation position directly from Tone.js timing for perfect sync
+// Calculate animation position based on time since last beat fired
+// This stays in sync even when BPM changes mid-playback
 function getAnimationProgress() {
   if (Tone.Transport.state !== 'started') {
     return 0; // At center when stopped
   }
   const beatDuration = 60 / Tone.Transport.bpm.value;
-  const timeInBeat = Tone.Transport.seconds % beatDuration;
-  return timeInBeat / beatDuration; // 0 to 1
+  const timeSinceLastBeat = Tone.now() - lastBeatTime;
+  // Clamp to 0-1 range in case of timing edge cases
+  return Math.min(Math.max(timeSinceLastBeat / beatDuration, 0), 1);
 }
 
 function getAnimalX(direction) {
@@ -1152,6 +1155,8 @@ function scheduleMainBeat() {
     // Reset animation timer to sync with beat
     Tone.Draw.schedule(function(){
       t = 0;
+      // Record when this beat fired for animation sync
+      lastBeatTime = Tone.now();
       // Update cached BPM only if it changed
       const currentBPM = Tone.Transport.bpm.value;
       if (cachedBPM !== currentBPM) {
