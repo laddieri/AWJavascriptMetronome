@@ -297,6 +297,370 @@ class Bird {
   }
 }
 
+class Frog {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+  }
+
+  pigmove(){
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Back legs
+    fill(34, 139, 34);
+    ellipse(bodyX - 50, bodyY + 50, 60, 30);
+    ellipse(bodyX + 50, bodyY + 50, 60, 30);
+
+    // Body
+    fill(50, 205, 50); // Lime green
+    ellipse(bodyX, bodyY, 160, 120);
+
+    // Head
+    ellipse(bodyX, bodyY - 40, 130, 100);
+
+    // Eyes (bulging)
+    fill(50, 205, 50);
+    ellipse(bodyX - 40, bodyY - 80, 50, 50);
+    ellipse(bodyX + 40, bodyY - 80, 50, 50);
+    fill(255);
+    ellipse(bodyX - 40, bodyY - 80, 35, 35);
+    ellipse(bodyX + 40, bodyY - 80, 35, 35);
+    fill(0);
+    ellipse(bodyX - 40, bodyY - 78, 15, 18);
+    ellipse(bodyX + 40, bodyY - 78, 15, 18);
+
+    // Mouth
+    stroke(30, 100, 30);
+    strokeWeight(3);
+    noFill();
+    arc(bodyX, bodyY - 20, 80, 40, 0, PI);
+    noStroke();
+
+    // Front legs
+    fill(34, 139, 34);
+    ellipse(bodyX - 70, bodyY + 30, 40, 20);
+    ellipse(bodyX + 70, bodyY + 30, 40, 20);
+
+    // Belly
+    fill(144, 238, 144);
+    ellipse(bodyX, bodyY + 10, 100, 70);
+  }
+}
+
+class Elephant {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+  }
+
+  pigmove(){
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Ears
+    fill(169, 169, 169);
+    ellipse(bodyX - 90, bodyY - 20, 70, 100);
+    ellipse(bodyX + 90, bodyY - 20, 70, 100);
+    fill(255, 182, 193);
+    ellipse(bodyX - 90, bodyY - 20, 45, 70);
+    ellipse(bodyX + 90, bodyY - 20, 45, 70);
+
+    // Body
+    fill(169, 169, 169); // Gray
+    ellipse(bodyX, bodyY, 180, 150);
+
+    // Head
+    ellipse(bodyX, bodyY - 50, 120, 110);
+
+    // Trunk
+    fill(169, 169, 169);
+    beginShape();
+    vertex(bodyX - 15, bodyY - 30);
+    vertex(bodyX + 15, bodyY - 30);
+    vertex(bodyX + 20, bodyY + 60);
+    vertex(bodyX + 35, bodyY + 80);
+    vertex(bodyX - 35, bodyY + 80);
+    vertex(bodyX - 20, bodyY + 60);
+    endShape(CLOSE);
+
+    // Eyes
+    fill(255);
+    ellipse(bodyX - 30, bodyY - 60, 25, 28);
+    ellipse(bodyX + 30, bodyY - 60, 25, 28);
+    fill(50, 30, 20);
+    ellipse(bodyX - 30, bodyY - 58, 12, 14);
+    ellipse(bodyX + 30, bodyY - 58, 12, 14);
+
+    // Tusks
+    fill(255, 250, 240);
+    beginShape();
+    vertex(bodyX - 25, bodyY);
+    vertex(bodyX - 45, bodyY + 40);
+    vertex(bodyX - 35, bodyY + 5);
+    endShape(CLOSE);
+    beginShape();
+    vertex(bodyX + 25, bodyY);
+    vertex(bodyX + 45, bodyY + 40);
+    vertex(bodyX + 35, bodyY + 5);
+    endShape(CLOSE);
+
+    // Legs
+    fill(128, 128, 128);
+    rect(bodyX - 60, bodyY + 55, 30, 70);
+    rect(bodyX - 20, bodyY + 55, 30, 70);
+    rect(bodyX + 30, bodyY + 55, 30, 70);
+
+    // Feet
+    fill(105, 105, 105);
+    ellipse(bodyX - 45, bodyY + 125, 38, 18);
+    ellipse(bodyX - 5, bodyY + 125, 38, 18);
+    ellipse(bodyX + 45, bodyY + 125, 38, 18);
+  }
+}
+
+class Penguin {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+  }
+
+  pigmove(){
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Wings
+    fill(30, 30, 40);
+    ellipse(bodyX - 65, bodyY + 10, 35, 90);
+    ellipse(bodyX + 65, bodyY + 10, 35, 90);
+
+    // Body (black)
+    fill(30, 30, 40);
+    ellipse(bodyX, bodyY, 130, 180);
+
+    // Belly (white)
+    fill(255);
+    ellipse(bodyX, bodyY + 20, 90, 140);
+
+    // Head
+    fill(30, 30, 40);
+    ellipse(bodyX, bodyY - 70, 90, 80);
+
+    // Face (white patches)
+    fill(255);
+    ellipse(bodyX - 25, bodyY - 65, 30, 35);
+    ellipse(bodyX + 25, bodyY - 65, 30, 35);
+
+    // Eyes
+    fill(0);
+    ellipse(bodyX - 20, bodyY - 70, 12, 14);
+    ellipse(bodyX + 20, bodyY - 70, 12, 14);
+    fill(255);
+    ellipse(bodyX - 18, bodyY - 72, 4, 4);
+    ellipse(bodyX + 22, bodyY - 72, 4, 4);
+
+    // Beak
+    fill(255, 165, 0);
+    triangle(bodyX - 12, bodyY - 50, bodyX + 12, bodyY - 50, bodyX, bodyY - 30);
+
+    // Feet
+    fill(255, 140, 0);
+    ellipse(bodyX - 25, bodyY + 85, 40, 18);
+    ellipse(bodyX + 25, bodyY + 85, 40, 18);
+  }
+}
+
+class Rabbit {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+  }
+
+  pigmove(){
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Ears
+    fill(255, 240, 245);
+    ellipse(bodyX - 30, bodyY - 120, 30, 90);
+    ellipse(bodyX + 30, bodyY - 120, 30, 90);
+    fill(255, 182, 193);
+    ellipse(bodyX - 30, bodyY - 115, 15, 60);
+    ellipse(bodyX + 30, bodyY - 115, 15, 60);
+
+    // Body
+    fill(255, 240, 245);
+    ellipse(bodyX, bodyY + 20, 140, 160);
+
+    // Head
+    ellipse(bodyX, bodyY - 50, 100, 90);
+
+    // Cheeks
+    fill(255, 228, 225);
+    ellipse(bodyX - 35, bodyY - 35, 30, 25);
+    ellipse(bodyX + 35, bodyY - 35, 30, 25);
+
+    // Eyes
+    fill(255);
+    ellipse(bodyX - 25, bodyY - 55, 28, 32);
+    ellipse(bodyX + 25, bodyY - 55, 28, 32);
+    fill(139, 69, 19);
+    ellipse(bodyX - 25, bodyY - 53, 14, 18);
+    ellipse(bodyX + 25, bodyY - 53, 14, 18);
+    fill(0);
+    ellipse(bodyX - 25, bodyY - 51, 8, 10);
+    ellipse(bodyX + 25, bodyY - 51, 8, 10);
+    fill(255);
+    ellipse(bodyX - 23, bodyY - 55, 4, 4);
+    ellipse(bodyX + 27, bodyY - 55, 4, 4);
+
+    // Nose
+    fill(255, 182, 193);
+    ellipse(bodyX, bodyY - 35, 15, 12);
+
+    // Mouth
+    stroke(200, 150, 150);
+    strokeWeight(2);
+    noFill();
+    arc(bodyX - 8, bodyY - 28, 15, 12, 0, PI);
+    arc(bodyX + 8, bodyY - 28, 15, 12, 0, PI);
+    noStroke();
+
+    // Whiskers
+    stroke(180, 180, 180);
+    strokeWeight(1);
+    line(bodyX - 50, bodyY - 40, bodyX - 30, bodyY - 38);
+    line(bodyX - 50, bodyY - 32, bodyX - 30, bodyY - 32);
+    line(bodyX + 50, bodyY - 40, bodyX + 30, bodyY - 38);
+    line(bodyX + 50, bodyY - 32, bodyX + 30, bodyY - 32);
+    noStroke();
+
+    // Feet
+    fill(255, 240, 245);
+    ellipse(bodyX - 35, bodyY + 95, 40, 25);
+    ellipse(bodyX + 35, bodyY + 95, 40, 25);
+
+    // Tail
+    fill(255);
+    ellipse(bodyX, bodyY + 90, 35, 30);
+  }
+}
+
+class Owl {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+  }
+
+  pigmove(){
+    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Wings
+    fill(139, 90, 43);
+    ellipse(bodyX - 70, bodyY + 10, 50, 100);
+    ellipse(bodyX + 70, bodyY + 10, 50, 100);
+    fill(101, 67, 33);
+    ellipse(bodyX - 75, bodyY + 30, 30, 60);
+    ellipse(bodyX + 75, bodyY + 30, 30, 60);
+
+    // Body
+    fill(160, 110, 60);
+    ellipse(bodyX, bodyY, 130, 170);
+
+    // Belly pattern
+    fill(210, 180, 140);
+    ellipse(bodyX, bodyY + 20, 80, 100);
+    // Feather details
+    fill(180, 140, 100);
+    for (let i = 0; i < 3; i++) {
+      arc(bodyX, bodyY + i * 25, 60, 20, 0, PI);
+    }
+
+    // Head
+    fill(160, 110, 60);
+    ellipse(bodyX, bodyY - 60, 110, 100);
+
+    // Ear tufts
+    fill(139, 90, 43);
+    triangle(bodyX - 50, bodyY - 90, bodyX - 35, bodyY - 60, bodyX - 55, bodyY - 60);
+    triangle(bodyX + 50, bodyY - 90, bodyX + 35, bodyY - 60, bodyX + 55, bodyY - 60);
+
+    // Eye circles (facial disc)
+    fill(210, 180, 140);
+    ellipse(bodyX - 28, bodyY - 55, 50, 55);
+    ellipse(bodyX + 28, bodyY - 55, 50, 55);
+
+    // Eyes
+    fill(255);
+    ellipse(bodyX - 28, bodyY - 55, 38, 42);
+    ellipse(bodyX + 28, bodyY - 55, 38, 42);
+    fill(255, 140, 0); // Orange iris
+    ellipse(bodyX - 28, bodyY - 53, 24, 28);
+    ellipse(bodyX + 28, bodyY - 53, 24, 28);
+    fill(0);
+    ellipse(bodyX - 28, bodyY - 51, 14, 16);
+    ellipse(bodyX + 28, bodyY - 51, 14, 16);
+    fill(255);
+    ellipse(bodyX - 25, bodyY - 55, 5, 5);
+    ellipse(bodyX + 31, bodyY - 55, 5, 5);
+
+    // Beak
+    fill(90, 70, 50);
+    triangle(bodyX - 8, bodyY - 40, bodyX + 8, bodyY - 40, bodyX, bodyY - 20);
+
+    // Feet
+    fill(90, 70, 50);
+    ellipse(bodyX - 25, bodyY + 80, 35, 18);
+    ellipse(bodyX + 25, bodyY + 80, 35, 18);
+    // Talons
+    stroke(70, 50, 30);
+    strokeWeight(3);
+    line(bodyX - 35, bodyY + 82, bodyX - 40, bodyY + 95);
+    line(bodyX - 25, bodyY + 85, bodyX - 25, bodyY + 98);
+    line(bodyX - 15, bodyY + 82, bodyX - 10, bodyY + 95);
+    line(bodyX + 35, bodyY + 82, bodyX + 40, bodyY + 95);
+    line(bodyX + 25, bodyY + 85, bodyX + 25, bodyY + 98);
+    line(bodyX + 15, bodyY + 82, bodyX + 10, bodyY + 95);
+    noStroke();
+  }
+}
+
 // Start Audio Context on Mouseclick
 document.documentElement.addEventListener(
   "mousedown", function(){
@@ -344,6 +708,63 @@ var birdSynth = new Tone.Synth({
   }
 }).toMaster();
 
+// Frog ribbit synth - low croaking sound
+var frogSynth = new Tone.Synth({
+  oscillator: { type: "sawtooth" },
+  envelope: {
+    attack: 0.01,
+    decay: 0.2,
+    sustain: 0.1,
+    release: 0.15
+  }
+}).toMaster();
+
+// Elephant trumpet synth - deep brassy sound
+var elephantSynth = new Tone.Synth({
+  oscillator: { type: "square" },
+  envelope: {
+    attack: 0.05,
+    decay: 0.3,
+    sustain: 0.2,
+    release: 0.2
+  }
+}).toMaster();
+
+// Penguin squawk synth - nasal honking sound
+var penguinSynth = new Tone.Synth({
+  oscillator: { type: "triangle" },
+  envelope: {
+    attack: 0.01,
+    decay: 0.15,
+    sustain: 0.1,
+    release: 0.1
+  }
+}).toMaster();
+
+// Rabbit thump synth - soft thumping sound
+var rabbitSynth = new Tone.MembraneSynth({
+  pitchDecay: 0.02,
+  octaves: 2,
+  oscillator: { type: "sine" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.15,
+    sustain: 0,
+    release: 0.1
+  }
+}).toMaster();
+
+// Owl hoot synth - low hollow sound
+var owlSynth = new Tone.Synth({
+  oscillator: { type: "sine" },
+  envelope: {
+    attack: 0.1,
+    decay: 0.3,
+    sustain: 0.2,
+    release: 0.3
+  }
+}).toMaster();
+
 // TriggerSound Play - switches based on animal type
 function triggerSound(time){
   switch(animalType) {
@@ -358,6 +779,21 @@ function triggerSound(time){
       break;
     case 'bird':
       birdSynth.triggerAttackRelease("E6", "32n", time);
+      break;
+    case 'frog':
+      frogSynth.triggerAttackRelease("G2", "8n", time);
+      break;
+    case 'elephant':
+      elephantSynth.triggerAttackRelease("C3", "4n", time);
+      break;
+    case 'penguin':
+      penguinSynth.triggerAttackRelease("E4", "16n", time);
+      break;
+    case 'rabbit':
+      rabbitSynth.triggerAttackRelease("G3", "16n", time);
+      break;
+    case 'owl':
+      owlSynth.triggerAttackRelease("D3", "4n", time);
       break;
     default:
       pigPlayer.start(time);
@@ -408,6 +844,26 @@ function createAnimals() {
     case 'bird':
       animal1 = new Bird(1);
       animal2 = new Bird(-1);
+      break;
+    case 'frog':
+      animal1 = new Frog(1);
+      animal2 = new Frog(-1);
+      break;
+    case 'elephant':
+      animal1 = new Elephant(1);
+      animal2 = new Elephant(-1);
+      break;
+    case 'penguin':
+      animal1 = new Penguin(1);
+      animal2 = new Penguin(-1);
+      break;
+    case 'rabbit':
+      animal1 = new Rabbit(1);
+      animal2 = new Rabbit(-1);
+      break;
+    case 'owl':
+      animal1 = new Owl(1);
+      animal2 = new Owl(-1);
       break;
     case 'pig':
     default:
