@@ -7,6 +7,24 @@ var animal1;
 var animal2;
 var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
 
+// Calculate animation position directly from Tone.js timing for perfect sync
+function getAnimationProgress() {
+  if (Tone.Transport.state !== 'started') {
+    return 0; // At center when stopped
+  }
+  const beatDuration = 60 / Tone.Transport.bpm.value;
+  const timeInBeat = Tone.Transport.seconds % beatDuration;
+  return timeInBeat / beatDuration; // 0 to 1
+}
+
+function getAnimalX(direction) {
+  const progress = getAnimationProgress();
+  // Sine wave: 0 at start, peaks at 0.5, returns to 0 at 1
+  // This creates smooth motion where animals meet at center on the beat
+  const displacement = Math.sin(progress * Math.PI) * 200;
+  return direction * displacement + (640 / 2);
+}
+
 // Easing functions for smooth animations
 const Easing = {
   // Exponential ease out - perfect for gravity/falling
@@ -45,7 +63,7 @@ class Pig {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -100,7 +118,7 @@ class Cat {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -169,7 +187,7 @@ class Dog {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -234,7 +252,7 @@ class Bird {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -306,7 +324,7 @@ class Frog {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -364,7 +382,7 @@ class Elephant {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -442,7 +460,7 @@ class Penguin {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -500,7 +518,7 @@ class Rabbit {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -583,7 +601,7 @@ class Owl {
   }
 
   pigmove(){
-    this.x = this.direction*500/(secondsPerBeat*60)*(t-((1/(secondsPerBeat*60))*t*t))+(640/2);
+    this.x = getAnimalX(this.direction);
     this.y = this.baseY;
   }
 
@@ -893,23 +911,17 @@ function setup() {
 
 
 function draw() {
-  if (t<5){
+  // Flash white at beat (when progress is near 0)
+  const progress = getAnimationProgress();
+  if (Tone.Transport.state === 'started' && progress < 0.08) {
     background('white');
   } else {
-      background('#696969');
+    background('#696969');
   }
 
-  // Only animate when transport is running
-  if (Tone.Transport.state === 'started') {
-    t++;
-    animal1.pigmove();
-    animal2.pigmove();
-  } else {
-    // Reset animation when stopped
-    t = 0;
-    animal1.x = 640 / 2;
-    animal2.x = 640 / 2;
-  }
+  // Update positions - getAnimalX handles both playing and stopped states
+  animal1.pigmove();
+  animal2.pigmove();
 
   animal1.display();
   animal2.display();
