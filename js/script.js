@@ -16,6 +16,7 @@ var beatsPerMeasure = 4;
 var currentBeat = 0;
 var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
 var accentEnabled = true;
+var flashEnabled = true; // Flash background on beat
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 
 // Canvas dimensions (will be set dynamically)
@@ -951,6 +952,14 @@ function initSettingsListeners() {
       accentEnabled = e.target.checked;
     });
   }
+
+  // Flash toggle
+  const flashCheckbox = document.getElementById('flash-enabled');
+  if (flashCheckbox) {
+    flashCheckbox.addEventListener('change', (e) => {
+      flashEnabled = e.target.checked;
+    });
+  }
 }
 
 // Start Audio Context on Mouseclick
@@ -1311,9 +1320,9 @@ function windowResized() {
 
 
 function draw() {
-  // Flash white at beat (when progress is near 0)
+  // Flash white at beat (when progress is near 0) if enabled
   const progress = getAnimationProgress();
-  if (Tone.Transport.state === 'started' && progress < 0.08) {
+  if (flashEnabled && Tone.Transport.state === 'started' && progress < 0.08) {
     background('white');
   } else {
     background('#696969');
