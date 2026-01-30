@@ -762,7 +762,7 @@ class Selfie {
     this.x = 100;
     this.y = 200;
     this.baseY = 200;
-    this.size = 180; // Size of the circular face
+    this.size = 280; // Size of the circular face (larger for better visibility)
   }
 
   pigmove(){
