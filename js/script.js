@@ -24,18 +24,19 @@ var canvasHeight = 480;
 var canvasScale = 1;
 
 // Calculate responsive canvas size
+// Canvas fills available space while maintaining 4:3 aspect ratio
 function getCanvasSize() {
   const wrapper = document.querySelector('.canvas-wrapper');
   if (!wrapper) return { width: 640, height: 480, scale: 1 };
 
-  const maxWidth = wrapper.clientWidth - 8; // Account for padding
-  const maxHeight = wrapper.clientHeight - 8; // Account for padding
+  const maxWidth = wrapper.clientWidth - 32; // Account for padding
+  const maxHeight = wrapper.clientHeight - 32; // Account for padding
   const baseWidth = 640;
   const baseHeight = 480;
   const aspectRatio = baseWidth / baseHeight;
 
-  // Calculate size based on both width and height constraints
-  let newWidth = Math.min(maxWidth, baseWidth);
+  // Start with max available width
+  let newWidth = maxWidth;
   let newHeight = newWidth / aspectRatio;
 
   // If height is constrained, scale down based on height
