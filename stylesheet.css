@@ -151,19 +151,20 @@ tone-slider {
 
 tone-play-toggle {
   align-self: center;
-  transform: scale(1.3);
+  transform: scale(1.1);
   --background-color: #667eea;
   --active-color: #48bb78;
   margin: 0 8px;
+  flex-shrink: 0;
 }
 
 .toggle {
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .toggle:hover {
-  transform: scale(1.4);
+  transform: scale(1.15);
 }
 
 /* Footer */
@@ -259,7 +260,7 @@ footer p {
   }
 
   tone-play-toggle {
-    transform: scale(1.2);
+    transform: scale(1.1);
     margin: 0 4px;
   }
 
@@ -287,11 +288,11 @@ footer p {
   }
 
   tone-play-toggle {
-    transform: scale(1.5);
+    transform: scale(1.1);
   }
 
   .toggle:hover {
-    transform: scale(1.6);
+    transform: scale(1.15);
   }
 }
 
@@ -385,12 +386,12 @@ footer p {
   }
 
   tone-play-toggle {
-    transform: scale(1.2);
+    transform: scale(1.1);
     margin: 0 4px;
   }
 
   .toggle:hover {
-    transform: scale(1.3);
+    transform: scale(1.15);
   }
 
   footer {
@@ -426,6 +427,10 @@ footer p {
     gap: 6px;
   }
 
+  tone-play-toggle {
+    transform: scale(1.1);
+  }
+
   .control-label {
     font-size: 0.55rem;
   }
@@ -434,10 +439,6 @@ footer p {
     padding: 6px 8px;
     font-size: 0.8rem;
     min-height: 36px;
-  }
-
-  tone-play-toggle {
-    transform: scale(1.1);
   }
 }
 
