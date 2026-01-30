@@ -9,6 +9,7 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -241,101 +242,178 @@ footer p {
   }
 }
 
-/* Mobile - small screens */
+/* Mobile - small screens (portrait) */
 @media (max-width: 480px) {
   body {
-    padding: 8px;
+    padding: 6px;
     align-items: flex-start;
-    padding-top: 16px;
+    padding-top: 8px;
   }
 
   .container {
-    padding: 16px;
-    border-radius: 16px;
+    padding: 12px;
+    border-radius: 12px;
   }
 
   header {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .subtitle {
-    font-size: 0.8rem;
+    display: none; /* Hide subtitle on mobile to save space */
   }
 
   main {
-    gap: 16px;
+    gap: 8px;
   }
 
   .canvas-wrapper {
-    padding: 8px;
-    border-radius: 12px;
+    padding: 4px;
+    border-radius: 8px;
   }
 
+  /* Controls in a row on mobile */
   .controls {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 16px;
-    border-radius: 12px;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    align-items: end;
+  }
+
+  .control-group {
+    gap: 4px;
   }
 
   .control-group:last-child {
     grid-column: auto;
-    margin-top: 4px;
+    margin-top: 0;
   }
 
   .control-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 
   .animation-dropdown {
-    padding: 14px 16px;
-    font-size: 1rem;
-    min-height: 52px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    min-height: 40px;
+    padding-right: 28px;
+    background-position: right 8px center;
+  }
+
+  tone-slider {
+    padding: 4px 0;
   }
 
   tone-play-toggle {
-    transform: scale(1.6);
-    margin: 8px 0;
+    transform: scale(1.2);
+    margin: 0 4px;
   }
 
   .toggle:hover {
-    transform: scale(1.7);
+    transform: scale(1.3);
   }
 
   footer {
-    margin-top: 16px;
-    padding-top: 16px;
-  }
-
-  footer p {
-    font-size: 0.75rem;
+    display: none; /* Hide footer on mobile to save space */
   }
 }
 
-/* Very small screens */
-@media (max-width: 360px) {
+/* Very small screens / short phones */
+@media (max-width: 380px) {
   body {
     padding: 4px;
+    padding-top: 4px;
   }
 
   .container {
-    padding: 12px;
+    padding: 8px;
   }
 
   h1 {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
+  }
+
+  main {
+    gap: 6px;
   }
 
   .canvas-wrapper {
+    padding: 2px;
+  }
+
+  .controls {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .control-label {
+    font-size: 0.55rem;
+  }
+
+  .animation-dropdown {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    min-height: 36px;
+  }
+
+  tone-play-toggle {
+    transform: scale(1.1);
+  }
+}
+
+/* Landscape mode on mobile - even more compact */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    padding: 4px;
+    align-items: center;
+  }
+
+  .container {
+    padding: 8px 12px;
+  }
+
+  header {
+    margin-bottom: 4px;
+  }
+
+  h1 {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  main {
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .canvas-wrapper {
+    flex: 0 0 auto;
     padding: 4px;
   }
 
   .controls {
-    padding: 12px;
+    flex: 1;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .control-group:last-child {
+    grid-column: auto;
+  }
+
+  footer {
+    display: none;
   }
 }
 
