@@ -17,17 +17,25 @@ function getCanvasSize() {
   const wrapper = document.querySelector('.canvas-wrapper');
   if (!wrapper) return { width: 640, height: 480, scale: 1 };
 
-  const maxWidth = wrapper.clientWidth - 32; // Account for padding
+  const maxWidth = wrapper.clientWidth - 8; // Account for padding
+  const maxHeight = wrapper.clientHeight - 8; // Account for padding
   const baseWidth = 640;
   const baseHeight = 480;
   const aspectRatio = baseWidth / baseHeight;
 
+  // Calculate size based on both width and height constraints
   let newWidth = Math.min(maxWidth, baseWidth);
   let newHeight = newWidth / aspectRatio;
 
+  // If height is constrained, scale down based on height
+  if (newHeight > maxHeight && maxHeight > 0) {
+    newHeight = maxHeight;
+    newWidth = newHeight * aspectRatio;
+  }
+
   // Ensure minimum size for very small screens
-  if (newWidth < 280) {
-    newWidth = 280;
+  if (newWidth < 200) {
+    newWidth = 200;
     newHeight = newWidth / aspectRatio;
   }
 
