@@ -1140,8 +1140,8 @@ function setup() {
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
 
-    // Open camera when selfie is selected (if no selfie captured yet)
-    if (animalType === 'selfie' && !selfieImage) {
+    // Always open camera when selfie is selected (allows retaking)
+    if (animalType === 'selfie') {
       openCamera();
     }
 
