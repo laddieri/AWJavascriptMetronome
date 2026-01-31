@@ -1510,6 +1510,21 @@ function setup() {
 
     createAnimals(); // Recreate animals when selection changes
   });
+
+  // Tempo marking dropdown - sets BPM based on Italian tempo terms
+  document.querySelector('#tempo-marking').addEventListener('change', e => {
+    const bpm = parseInt(e.target.value);
+    if (bpm) {
+      Tone.Transport.bpm.value = bpm;
+      cachedBPM = bpm;
+      secondsPerBeat = 1 / (bpm / 60);
+      // Update the slider display
+      const slider = document.querySelector('tone-slider');
+      if (slider) {
+        slider.setAttribute('value', bpm);
+      }
+    }
+  });
 }
 
 // Handle window resize for responsive canvas
