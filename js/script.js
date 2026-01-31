@@ -5,7 +5,8 @@ var secondsPerBeat = 1;
 var cachedBPM = 60;
 var animal1;
 var animal2;
-var animalType = 'pig'; // 'pig', 'cat', 'dog', 'bird'
+var animalType = 'circle'; // 'circle', 'pig', 'cat', 'dog', 'bird', etc.
+var circleColor = '#000000'; // Color for circle animation
 
 // Selfie capture variables
 var selfieImage = null;
@@ -131,6 +132,31 @@ const Easing = {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   }
 };
+
+class Circle {
+  constructor(direction){
+    this.direction = direction;
+    this.x = 100;
+    this.y = 200;
+    this.baseY = 200;
+    this.size = 180; // Diameter of the circle
+  }
+
+  pigmove(){
+    this.x = getAnimalX(this.direction);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Draw a simple filled circle
+    noStroke();
+    fill(circleColor);
+    ellipse(bodyX, bodyY, this.size, this.size);
+  }
+}
 
 class Pig {
   constructor(direction){
@@ -1094,6 +1120,14 @@ function initSettingsListeners() {
       voiceCountEnabled = e.target.checked;
     });
   }
+
+  // Circle color picker
+  const circleColorPicker = document.getElementById('circle-color');
+  if (circleColorPicker) {
+    circleColorPicker.addEventListener('input', (e) => {
+      circleColor = e.target.value;
+    });
+  }
 }
 
 // Start Audio Context on Mouseclick
@@ -1211,6 +1245,17 @@ var selfieSynth = new Tone.NoiseSynth({
   }
 }).toMaster();
 
+// Circle click synth - clean metronome tick
+var circleSynth = new Tone.Synth({
+  oscillator: { type: "sine" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.1,
+    sustain: 0,
+    release: 0.05
+  }
+}).toMaster();
+
 // Subdivision click synth - soft tick for subdivisions
 var subdivisionSynth = new Tone.Synth({
   oscillator: { type: "triangle" },
@@ -1246,6 +1291,9 @@ function triggerSound(time, isAccent = false){
   if (!animalSoundEnabled) return;
 
   switch(animalType) {
+    case 'circle':
+      circleSynth.triggerAttackRelease("A4", "16n", time);
+      break;
     case 'pig':
       pigPlayer.start(time);
       break;
@@ -1379,6 +1427,10 @@ document.querySelector('tone-slider').addEventListener('change', e => {
 // Function to create animals based on selected type
 function createAnimals() {
   switch(animalType) {
+    case 'circle':
+      animal1 = new Circle(1);
+      animal2 = new Circle(-1);
+      break;
     case 'cat':
       animal1 = new Cat(1);
       animal2 = new Cat(-1);
@@ -1416,9 +1468,12 @@ function createAnimals() {
       animal2 = new Selfie(-1);
       break;
     case 'pig':
-    default:
       animal1 = new Pig(1);
       animal2 = new Pig(-1);
+      break;
+    default:
+      animal1 = new Circle(1);
+      animal2 = new Circle(-1);
       break;
   }
 }
