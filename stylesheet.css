@@ -141,6 +141,27 @@ main {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+/* Main color picker */
+.color-picker-main {
+  width: 100%;
+  height: 40px;
+  padding: 4px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+}
+
+.color-picker-main:hover {
+  border-color: #667eea;
+}
+
+.color-picker-main:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
 /* Tone.js UI components styling */
 tone-slider {
   --background-color: #e2e8f0;
