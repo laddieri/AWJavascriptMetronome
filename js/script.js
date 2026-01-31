@@ -137,8 +137,8 @@ class Circle {
   constructor(direction){
     this.direction = direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
     this.size = 180; // Diameter of the circle
   }
 
@@ -162,8 +162,8 @@ class Pig {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200; // Base Y position
-    this.baseY = 200;
+    this.y = 240; // Base Y position
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -217,8 +217,8 @@ class Cat {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200; // Base Y position
-    this.baseY = 200;
+    this.y = 240; // Base Y position
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -286,8 +286,8 @@ class Dog {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -351,8 +351,8 @@ class Bird {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -423,8 +423,8 @@ class Frog {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -481,8 +481,8 @@ class Elephant {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -559,8 +559,8 @@ class Penguin {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -617,8 +617,8 @@ class Rabbit {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -700,8 +700,8 @@ class Owl {
   constructor(direction){
     this.direction=direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
   }
 
   pigmove(){
@@ -787,8 +787,8 @@ class Selfie {
   constructor(direction){
     this.direction = direction;
     this.x = 100;
-    this.y = 200;
-    this.baseY = 200;
+    this.y = 240;
+    this.baseY = 240;
     this.size = 280; // Size of the circular face (larger for better visibility)
   }
 
