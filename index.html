@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animal Metronome</title>
+    <title>Visual Metronome</title>
     <link rel="stylesheet" href="stylesheet.css" type="text/css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,8 +12,8 @@
   <body>
     <div class="container">
       <header>
-        <h1>🎵 Animal Metronome</h1>
-        <p class="subtitle">Keep perfect time with bouncing animals</p>
+        <h1>🎵 Visual Metronome</h1>
+        <p class="subtitle">Keep perfect time with visual cues</p>
       </header>
 
       <main>
@@ -28,8 +28,9 @@
           </div>
 
           <div class="control-group">
-            <label class="control-label">Animal</label>
+            <label class="control-label">Animation</label>
             <select id="animal-selector" class="animation-dropdown">
+              <option value="circle">⚫ Circles</option>
               <option value="pig">🐷 Pig</option>
               <option value="cat">🐱 Cat</option>
               <option value="dog">🐶 Dog</option>
@@ -111,6 +112,11 @@
             <input type="checkbox" id="voice-count-enabled">
             Count beats aloud
           </label>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">Circle Color</label>
+          <input type="color" id="circle-color" value="#000000" class="color-picker">
         </div>
 
         <div class="settings-buttons">
