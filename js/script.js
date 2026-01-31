@@ -747,6 +747,14 @@ document.querySelector('tone-slider').addEventListener('change', e => {
   secondsPerBeat = 1 / (e.detail / 60);
 })
 
+// Show/hide color picker based on animation type
+function updateColorPickerVisibility() {
+  const colorPickerGroup = document.getElementById('color-picker-group');
+  if (colorPickerGroup) {
+    colorPickerGroup.style.display = (animalType === 'circle') ? '' : 'none';
+  }
+}
+
 // Function to create animals based on selected type
 function createAnimals() {
   switch(animalType) {
@@ -794,6 +802,9 @@ function setup() {
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
 
+    // Show/hide color picker based on animation type
+    updateColorPickerVisibility();
+
     // Always open camera when selfie is selected (allows retaking)
     if (animalType === 'selfie') {
       openCamera();
@@ -801,6 +812,9 @@ function setup() {
 
     createAnimals(); // Recreate animals when selection changes
   });
+
+  // Initial color picker visibility
+  updateColorPickerVisibility();
 
   // Tempo marking dropdown - sets BPM based on Italian tempo terms
   document.querySelector('#tempo-marking').addEventListener('change', e => {
