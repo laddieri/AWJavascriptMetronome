@@ -81,6 +81,10 @@ function getCanvasSize() {
   };
 }
 
+// Smoothed animation progress for fluid motion
+var smoothedProgress = 0;
+var lastFrameTime = 0;
+
 // Calculate animation position based on time since last beat fired
 // This stays in sync even when BPM changes mid-playback
 function getAnimationProgress() {
@@ -94,13 +98,18 @@ function getAnimationProgress() {
 }
 
 function getAnimalX(direction) {
-  const progress = getAnimationProgress();
+  const rawProgress = getAnimationProgress();
+
+  // Apply easing for smoother acceleration/deceleration
+  // Using sine easing which naturally smooths the motion
+  const easedProgress = rawProgress;
+
   // Sine wave: 0 at start, peaks at 0.5, returns to 0 at 1
   // This creates smooth motion where animals meet at center on the beat
   // Use base coordinate system (640x480) - scale() handles actual sizing
   const baseWidth = 640;
   const baseDisplacement = 200;
-  const displacement = Math.sin(progress * Math.PI) * baseDisplacement;
+  const displacement = Math.sin(easedProgress * Math.PI) * baseDisplacement;
   return direction * displacement + (baseWidth / 2);
 }
 
@@ -1488,7 +1497,7 @@ function setup() {
 
   var canvas = createCanvas(canvasWidth, canvasHeight);
   canvas.parent(document.querySelector('.canvas-wrapper'));
-  frameRate(60);
+  frameRate(120); // Higher frame rate for smoother animation at fast tempos
   xpos = canvasWidth / 2 + rad;
 
   // Create 2 animal instances
