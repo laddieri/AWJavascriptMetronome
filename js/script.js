@@ -26,6 +26,7 @@ var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
 var lastBeatTime = 0; // Track when last beat fired for animation sync
+var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
 
 // Voice counting with Web Speech API
 function speakBeatNumber(beatNumber) {
@@ -111,6 +112,19 @@ function getAnimalX(direction) {
   const baseDisplacement = 200;
   const displacement = Math.sin(easedProgress * Math.PI) * baseDisplacement;
   return direction * displacement + (baseWidth / 2);
+}
+
+// Get Y position for vertical bounce mode
+function getVerticalY() {
+  const rawProgress = getAnimationProgress();
+  const baseHeight = 480;
+  const lineY = 380; // Where the horizontal line is
+  const maxHeight = 280; // How high the object bounces
+
+  // Object is at the line (bottom) when progress = 0 (on the beat)
+  // Bounces up with sine wave
+  const displacement = Math.sin(rawProgress * Math.PI) * maxHeight;
+  return lineY - displacement;
 }
 
 // Easing functions for smooth animations
@@ -813,6 +827,11 @@ function setup() {
     createAnimals(); // Recreate animals when selection changes
   });
 
+  // Bounce direction dropdown
+  document.querySelector('#bounce-direction').addEventListener('change', e => {
+    bounceDirection = e.target.value;
+  });
+
   // Initial color picker visibility
   updateColorPickerVisibility();
 
@@ -855,12 +874,28 @@ function draw() {
   push();
   scale(canvasScale);
 
-  // Update positions - getAnimalX handles both playing and stopped states
-  animal1.pigmove();
-  animal2.pigmove();
+  if (bounceDirection === 'vertical') {
+    // Vertical mode: one object bouncing against a horizontal line
+    const lineY = 380;
 
-  animal1.display();
-  animal2.display();
+    // Draw the horizontal line
+    stroke(200);
+    strokeWeight(4);
+    line(120, lineY, 520, lineY);
+    noStroke();
+
+    // Position the single animal at center X, vertical Y
+    animal1.x = 320; // Center of 640 width
+    animal1.y = getVerticalY();
+    animal1.display();
+  } else {
+    // Horizontal mode: two objects bouncing toward each other
+    animal1.pigmove();
+    animal2.pigmove();
+
+    animal1.display();
+    animal2.display();
+  }
 
   pop();
 }
