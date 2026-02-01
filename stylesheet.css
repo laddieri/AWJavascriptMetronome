@@ -899,10 +899,13 @@ footer p {
   display: flex;
   flex-direction: column;
   z-index: 2000;
+  overflow: hidden;
 }
 
 .fullscreen-overlay.hidden {
-  display: none;
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .fullscreen-exit-btn {
