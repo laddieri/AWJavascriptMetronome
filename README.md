@@ -1,2 +1,2 @@
-# AWJavascriptMetronome
+# VisualMetronome
 Javascript metronome
