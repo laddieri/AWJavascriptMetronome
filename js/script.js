@@ -389,7 +389,39 @@ function capturePhoto() {
 }
 
 // Sound recording functions
+var isCountingDown = false; // Track if countdown is in progress
+
 function startRecording() {
+  const recordBtn = document.getElementById('record-sound-btn');
+  const recordingStatus = document.getElementById('recording-status');
+
+  // Prevent starting if already counting down
+  if (isCountingDown) return;
+
+  // Start countdown
+  isCountingDown = true;
+  recordBtn.disabled = true;
+  recordBtn.textContent = '3...';
+  recordingStatus.textContent = 'Get ready...';
+  recordingStatus.classList.add('recording');
+
+  setTimeout(() => {
+    recordBtn.textContent = '2...';
+  }, 1000);
+
+  setTimeout(() => {
+    recordBtn.textContent = '1...';
+  }, 2000);
+
+  // After 3 seconds, start actual recording
+  setTimeout(() => {
+    isCountingDown = false;
+    recordBtn.disabled = false;
+    actuallyStartRecording();
+  }, 3000);
+}
+
+function actuallyStartRecording() {
   const recordBtn = document.getElementById('record-sound-btn');
   const recordingStatus = document.getElementById('recording-status');
 
