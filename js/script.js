@@ -27,6 +27,7 @@ var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
+var isFullscreen = false; // Fullscreen mode state
 
 // Voice counting with Web Speech API
 function speakBeatNumber(beatNumber) {
@@ -80,6 +81,143 @@ function getCanvasSize() {
     height: Math.floor(newHeight),
     scale: newWidth / baseWidth
   };
+}
+
+// Calculate canvas size for fullscreen mode
+function getFullscreenCanvasSize() {
+  const wrapper = document.querySelector('.fullscreen-canvas-wrapper');
+  if (!wrapper) return getCanvasSize();
+
+  const maxWidth = wrapper.clientWidth - 40;
+  const maxHeight = wrapper.clientHeight - 40;
+  const baseWidth = 640;
+  const baseHeight = 480;
+  const aspectRatio = baseWidth / baseHeight;
+
+  let newWidth = maxWidth;
+  let newHeight = newWidth / aspectRatio;
+
+  if (newHeight > maxHeight && maxHeight > 0) {
+    newHeight = maxHeight;
+    newWidth = newHeight * aspectRatio;
+  }
+
+  return {
+    width: Math.floor(newWidth),
+    height: Math.floor(newHeight),
+    scale: newWidth / baseWidth
+  };
+}
+
+// Enter fullscreen mode
+function enterFullscreen() {
+  isFullscreen = true;
+  const overlay = document.getElementById('fullscreen-overlay');
+  const canvas = document.querySelector('.canvas-wrapper canvas');
+  const fullscreenWrapper = document.querySelector('.fullscreen-canvas-wrapper');
+
+  // Move canvas to fullscreen wrapper
+  if (canvas && fullscreenWrapper) {
+    fullscreenWrapper.appendChild(canvas);
+  }
+
+  // Show overlay
+  overlay.classList.remove('hidden');
+
+  // Sync tempo slider with current BPM
+  const fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
+  if (fullscreenSlider) {
+    fullscreenSlider.setAttribute('value', Tone.Transport.bpm.value);
+  }
+
+  // Resize canvas for fullscreen
+  setTimeout(() => {
+    const size = getFullscreenCanvasSize();
+    canvasWidth = size.width;
+    canvasHeight = size.height;
+    canvasScale = size.scale;
+    resizeCanvas(canvasWidth, canvasHeight);
+  }, 50);
+}
+
+// Exit fullscreen mode
+function exitFullscreen() {
+  isFullscreen = false;
+  const overlay = document.getElementById('fullscreen-overlay');
+  const canvas = document.querySelector('.fullscreen-canvas-wrapper canvas');
+  const normalWrapper = document.querySelector('.canvas-wrapper');
+
+  // Move canvas back to normal wrapper
+  if (canvas && normalWrapper) {
+    normalWrapper.appendChild(canvas);
+  }
+
+  // Hide overlay
+  overlay.classList.add('hidden');
+
+  // Sync main slider with current BPM
+  const mainSlider = document.querySelector('.controls tone-slider');
+  if (mainSlider) {
+    mainSlider.setAttribute('value', Tone.Transport.bpm.value);
+  }
+
+  // Resize canvas for normal mode
+  setTimeout(() => {
+    const size = getCanvasSize();
+    canvasWidth = size.width;
+    canvasHeight = size.height;
+    canvasScale = size.scale;
+    resizeCanvas(canvasWidth, canvasHeight);
+  }, 50);
+}
+
+// Initialize fullscreen listeners
+function initFullscreenListeners() {
+  const fullscreenBtn = document.getElementById('fullscreen-btn');
+  const exitBtn = document.getElementById('fullscreen-exit-btn');
+  const fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
+  const fullscreenToggle = document.getElementById('fullscreen-play-toggle');
+
+  // Enter fullscreen
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', enterFullscreen);
+  }
+
+  // Exit fullscreen
+  if (exitBtn) {
+    exitBtn.addEventListener('click', exitFullscreen);
+  }
+
+  // Fullscreen tempo slider
+  if (fullscreenSlider) {
+    fullscreenSlider.addEventListener('change', e => {
+      Tone.Transport.bpm.value = e.detail;
+      cachedBPM = e.detail;
+      secondsPerBeat = 1 / (e.detail / 60);
+      // Sync main slider
+      const mainSlider = document.querySelector('.controls tone-slider');
+      if (mainSlider) {
+        mainSlider.setAttribute('value', e.detail);
+      }
+    });
+  }
+
+  // Fullscreen play toggle
+  if (fullscreenToggle) {
+    fullscreenToggle.addEventListener('change', e => {
+      Tone.Transport.toggle();
+      if (Tone.Transport.state !== 'started') {
+        currentBeat = 0;
+      }
+    });
+  }
+
+  // ESC key to exit fullscreen
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isFullscreen) {
+      exitFullscreen();
+    }
+  });
 }
 
 // Smoothed animation progress for fluid motion
@@ -964,6 +1102,9 @@ function setup() {
   // Initialize settings modal listeners
   initSettingsListeners();
 
+  // Initialize fullscreen listeners
+  initFullscreenListeners();
+
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
 
@@ -1004,7 +1145,7 @@ function setup() {
 
 // Handle window resize for responsive canvas
 function windowResized() {
-  const size = getCanvasSize();
+  const size = isFullscreen ? getFullscreenCanvasSize() : getCanvasSize();
   canvasWidth = size.width;
   canvasHeight = size.height;
   canvasScale = size.scale;
