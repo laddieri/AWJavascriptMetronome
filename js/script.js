@@ -117,14 +117,14 @@ function getAnimalX(direction) {
 // Get Y position for vertical bounce mode
 function getVerticalY() {
   const rawProgress = getAnimationProgress();
-  const baseHeight = 480;
-  const lineY = 380; // Where the horizontal line is
-  const maxHeight = 280; // How high the object bounces
+  const lineY = 420; // Where the horizontal line is (lowered)
+  const bounceBottom = 350; // Object center at lowest point (~20% below line)
+  const maxHeight = 260; // How high the object bounces from bottom
 
-  // Object is at the line (bottom) when progress = 0 (on the beat)
-  // Bounces up with sine wave
+  // Object center is at bounceBottom when progress = 0 (on the beat)
+  // About 20% of object passes below the line
   const displacement = Math.sin(rawProgress * Math.PI) * maxHeight;
-  return lineY - displacement;
+  return bounceBottom - displacement;
 }
 
 // Easing functions for smooth animations
@@ -1027,7 +1027,7 @@ function draw() {
 
   if (bounceDirection === 'vertical') {
     // Vertical mode: one object bouncing against a horizontal line
-    const lineY = 380;
+    const lineY = 420;
 
     // Draw the horizontal line
     stroke(200);
