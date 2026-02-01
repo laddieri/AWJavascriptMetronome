@@ -421,6 +421,122 @@ function startRecording() {
   }, 3000);
 }
 
+// Trim silence from beginning and end of audio buffer
+async function trimSilence(audioBlob) {
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+  try {
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const channelData = audioBuffer.getChannelData(0); // Get first channel
+    const sampleRate = audioBuffer.sampleRate;
+
+    // Find first non-silent sample (threshold-based)
+    const threshold = 0.01; // Adjust sensitivity
+    let startSample = 0;
+    let endSample = channelData.length - 1;
+
+    // Find start (first sample above threshold)
+    for (let i = 0; i < channelData.length; i++) {
+      if (Math.abs(channelData[i]) > threshold) {
+        // Add small buffer before sound (50ms)
+        startSample = Math.max(0, i - Math.floor(sampleRate * 0.05));
+        break;
+      }
+    }
+
+    // Find end (last sample above threshold)
+    for (let i = channelData.length - 1; i >= 0; i--) {
+      if (Math.abs(channelData[i]) > threshold) {
+        // Add small buffer after sound (100ms)
+        endSample = Math.min(channelData.length - 1, i + Math.floor(sampleRate * 0.1));
+        break;
+      }
+    }
+
+    // Create trimmed buffer
+    const trimmedLength = endSample - startSample + 1;
+    const trimmedBuffer = audioContext.createBuffer(
+      audioBuffer.numberOfChannels,
+      trimmedLength,
+      sampleRate
+    );
+
+    // Copy trimmed data to new buffer
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      const sourceData = audioBuffer.getChannelData(channel);
+      const destData = trimmedBuffer.getChannelData(channel);
+      for (let i = 0; i < trimmedLength; i++) {
+        destData[i] = sourceData[startSample + i];
+      }
+    }
+
+    // Convert back to blob (WAV format for better compatibility)
+    const wavBlob = audioBufferToWav(trimmedBuffer);
+    audioContext.close();
+    return wavBlob;
+  } catch (err) {
+    console.error('Error trimming audio:', err);
+    audioContext.close();
+    return audioBlob; // Return original if trimming fails
+  }
+}
+
+// Convert AudioBuffer to WAV Blob
+function audioBufferToWav(buffer) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+
+  const bytesPerSample = bitDepth / 8;
+  const blockAlign = numChannels * bytesPerSample;
+
+  const dataLength = buffer.length * blockAlign;
+  const bufferLength = 44 + dataLength;
+
+  const arrayBuffer = new ArrayBuffer(bufferLength);
+  const view = new DataView(arrayBuffer);
+
+  // Write WAV header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitDepth, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  // Write audio data
+  const offset = 44;
+  const channelData = [];
+  for (let i = 0; i < numChannels; i++) {
+    channelData.push(buffer.getChannelData(i));
+  }
+
+  for (let i = 0; i < buffer.length; i++) {
+    for (let channel = 0; channel < numChannels; channel++) {
+      const sample = Math.max(-1, Math.min(1, channelData[channel][i]));
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset + (i * blockAlign) + (channel * bytesPerSample), intSample, true);
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: 'audio/wav' });
+}
+
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
 function actuallyStartRecording() {
   const recordBtn = document.getElementById('record-sound-btn');
   const recordingStatus = document.getElementById('recording-status');
@@ -434,19 +550,22 @@ function actuallyStartRecording() {
         audioChunks.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         // Stop the audio stream
         stream.getTracks().forEach(track => track.stop());
 
-        // Create audio blob and URL
+        recordingStatus.textContent = 'Processing...';
+
+        // Create audio blob and trim silence
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const trimmedBlob = await trimSilence(audioBlob);
 
         // Revoke old URL if exists
         if (recordedSoundURL) {
           URL.revokeObjectURL(recordedSoundURL);
         }
 
-        recordedSoundURL = URL.createObjectURL(audioBlob);
+        recordedSoundURL = URL.createObjectURL(trimmedBlob);
 
         // Create Tone.js Player with recorded sound
         if (recordedSoundPlayer) {
@@ -454,7 +573,7 @@ function actuallyStartRecording() {
         }
         recordedSoundPlayer = new Tone.Player(recordedSoundURL).toMaster();
 
-        recordingStatus.textContent = '✓ Sound recorded!';
+        recordingStatus.textContent = '✓ Sound recorded & trimmed!';
         recordingStatus.classList.remove('recording');
       };
 
