@@ -109,28 +109,8 @@ function getFullscreenCanvasSize() {
   };
 }
 
-// Sync play toggle visual state with transport state
-function syncPlayToggles() {
-  const isPlaying = Tone.Transport.state === 'started';
-  const mainToggle = document.querySelector('.controls tone-play-toggle');
-  const fullscreenToggle = document.getElementById('fullscreen-play-toggle');
-
-  // Set the 'started' attribute to sync visual state
-  if (mainToggle) {
-    if (isPlaying) {
-      mainToggle.setAttribute('started', '');
-    } else {
-      mainToggle.removeAttribute('started');
-    }
-  }
-  if (fullscreenToggle) {
-    if (isPlaying) {
-      fullscreenToggle.setAttribute('started', '');
-    } else {
-      fullscreenToggle.removeAttribute('started');
-    }
-  }
-}
+// Store reference to main toggle's original parent
+var mainToggleParent = null;
 
 // Enter fullscreen mode
 function enterFullscreen() {
@@ -138,10 +118,18 @@ function enterFullscreen() {
   const overlay = document.getElementById('fullscreen-overlay');
   const canvas = document.querySelector('.canvas-wrapper canvas');
   const fullscreenWrapper = document.querySelector('.fullscreen-canvas-wrapper');
+  const mainToggle = document.querySelector('.controls tone-play-toggle');
+  const togglePlaceholder = document.getElementById('fullscreen-toggle-placeholder');
 
   // Move canvas to fullscreen wrapper
   if (canvas && fullscreenWrapper) {
     fullscreenWrapper.appendChild(canvas);
+  }
+
+  // Move play toggle to fullscreen controls
+  if (mainToggle && togglePlaceholder) {
+    mainToggleParent = mainToggle.parentElement;
+    togglePlaceholder.appendChild(mainToggle);
   }
 
   // Show overlay
@@ -152,9 +140,6 @@ function enterFullscreen() {
   if (fullscreenSlider) {
     fullscreenSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
-
-  // Sync play toggle state
-  syncPlayToggles();
 
   // Resize canvas for fullscreen
   setTimeout(() => {
@@ -172,10 +157,16 @@ function exitFullscreen() {
   const overlay = document.getElementById('fullscreen-overlay');
   const canvas = document.querySelector('.fullscreen-canvas-wrapper canvas');
   const normalWrapper = document.querySelector('.canvas-wrapper');
+  const mainToggle = document.querySelector('#fullscreen-toggle-placeholder tone-play-toggle');
 
   // Move canvas back to normal wrapper
   if (canvas && normalWrapper) {
     normalWrapper.appendChild(canvas);
+  }
+
+  // Move play toggle back to main controls
+  if (mainToggle && mainToggleParent) {
+    mainToggleParent.appendChild(mainToggle);
   }
 
   // Hide overlay
@@ -186,9 +177,6 @@ function exitFullscreen() {
   if (mainSlider) {
     mainSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
-
-  // Sync play toggle state
-  syncPlayToggles();
 
   // Resize canvas for normal mode
   setTimeout(() => {
@@ -205,7 +193,6 @@ function initFullscreenListeners() {
   const fullscreenBtn = document.getElementById('fullscreen-btn');
   const exitBtn = document.getElementById('fullscreen-exit-btn');
   const fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
-  const fullscreenToggle = document.getElementById('fullscreen-play-toggle');
 
   // Enter fullscreen
   if (fullscreenBtn) {
@@ -228,18 +215,6 @@ function initFullscreenListeners() {
       if (mainSlider) {
         mainSlider.setAttribute('value', e.detail);
       }
-    });
-  }
-
-  // Fullscreen play toggle
-  if (fullscreenToggle) {
-    fullscreenToggle.addEventListener('change', e => {
-      Tone.Transport.toggle();
-      if (Tone.Transport.state !== 'started') {
-        currentBeat = 0;
-      }
-      // Sync both play toggles
-      syncPlayToggles();
     });
   }
 
@@ -1072,8 +1047,6 @@ document.querySelector('tone-play-toggle').addEventListener('change', e => {
   if (Tone.Transport.state !== 'started') {
     currentBeat = 0;
   }
-  // Sync both play toggles
-  syncPlayToggles();
 })
 
 //update BPM from slider
