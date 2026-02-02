@@ -109,6 +109,29 @@ function getFullscreenCanvasSize() {
   };
 }
 
+// Sync play toggle visual state with transport state
+function syncPlayToggles() {
+  const isPlaying = Tone.Transport.state === 'started';
+  const mainToggle = document.querySelector('.controls tone-play-toggle');
+  const fullscreenToggle = document.getElementById('fullscreen-play-toggle');
+
+  // Set the 'started' attribute to sync visual state
+  if (mainToggle) {
+    if (isPlaying) {
+      mainToggle.setAttribute('started', '');
+    } else {
+      mainToggle.removeAttribute('started');
+    }
+  }
+  if (fullscreenToggle) {
+    if (isPlaying) {
+      fullscreenToggle.setAttribute('started', '');
+    } else {
+      fullscreenToggle.removeAttribute('started');
+    }
+  }
+}
+
 // Enter fullscreen mode
 function enterFullscreen() {
   isFullscreen = true;
@@ -129,6 +152,9 @@ function enterFullscreen() {
   if (fullscreenSlider) {
     fullscreenSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
+
+  // Sync play toggle state
+  syncPlayToggles();
 
   // Resize canvas for fullscreen
   setTimeout(() => {
@@ -160,6 +186,9 @@ function exitFullscreen() {
   if (mainSlider) {
     mainSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
+
+  // Sync play toggle state
+  syncPlayToggles();
 
   // Resize canvas for normal mode
   setTimeout(() => {
@@ -209,6 +238,8 @@ function initFullscreenListeners() {
       if (Tone.Transport.state !== 'started') {
         currentBeat = 0;
       }
+      // Sync both play toggles
+      syncPlayToggles();
     });
   }
 
@@ -1041,6 +1072,8 @@ document.querySelector('tone-play-toggle').addEventListener('change', e => {
   if (Tone.Transport.state !== 'started') {
     currentBeat = 0;
   }
+  // Sync both play toggles
+  syncPlayToggles();
 })
 
 //update BPM from slider
