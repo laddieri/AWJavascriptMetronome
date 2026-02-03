@@ -22,53 +22,60 @@
         </div>
 
         <div class="controls">
-          <div class="control-group">
-            <label class="control-label">Tempo</label>
-            <select id="tempo-marking" class="animation-dropdown">
-              <option value="">-- Select Marking --</option>
-              <option value="60">Largo (60 BPM)</option>
-              <option value="66">Larghetto (66 BPM)</option>
-              <option value="72">Adagio (72 BPM)</option>
-              <option value="84">Andante (84 BPM)</option>
-              <option value="100">Moderato (100 BPM)</option>
-              <option value="116">Allegretto (116 BPM)</option>
-              <option value="132">Allegro (132 BPM)</option>
-              <option value="168">Vivace (168 BPM)</option>
-              <option value="184">Presto (184 BPM)</option>
-              <option value="208">Prestissimo (208 BPM)</option>
-            </select>
-            <tone-slider label="bpm" min="60" max="240" exp="2" value="60"></tone-slider>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Animation</label>
-            <select id="animal-selector" class="animation-dropdown">
-              <option value="circle">⚫ Circles</option>
-              <option value="pig">🐷 Pig</option>
-              <option value="selfie">📸 Selfie</option>
-            </select>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Direction</label>
-            <select id="bounce-direction" class="animation-dropdown">
-              <option value="horizontal">Horizontal</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </div>
-
-          <div class="control-group" id="color-picker-group">
-            <label class="control-label">Color</label>
-            <input type="color" id="circle-color" value="#000000" class="color-picker-main">
-          </div>
-
-          <div class="control-group">
+          <!-- Primary Controls: Play and Tempo -->
+          <div class="controls-primary">
             <tone-play-toggle class='toggle'></tone-play-toggle>
+
+            <div class="tempo-controls">
+              <label class="control-label">Tempo</label>
+              <div class="tempo-row">
+                <select id="tempo-marking" class="tempo-dropdown">
+                  <option value="">Marking...</option>
+                  <option value="60">Largo (60)</option>
+                  <option value="66">Larghetto (66)</option>
+                  <option value="72">Adagio (72)</option>
+                  <option value="84">Andante (84)</option>
+                  <option value="100">Moderato (100)</option>
+                  <option value="116">Allegretto (116)</option>
+                  <option value="132">Allegro (132)</option>
+                  <option value="168">Vivace (168)</option>
+                  <option value="184">Presto (184)</option>
+                  <option value="208">Prestissimo (208)</option>
+                </select>
+                <tone-slider label="bpm" min="60" max="240" exp="2" value="60"></tone-slider>
+              </div>
+            </div>
           </div>
 
-          <div class="control-group settings-group">
-            <button id="fullscreen-btn" class="settings-btn" title="Fullscreen Mode">⛶</button>
-            <button id="settings-btn" class="settings-btn" title="Advanced Settings">⚙️</button>
+          <!-- Animation Settings Row -->
+          <div class="controls-secondary">
+            <div class="control-group">
+              <label class="control-label">Animation</label>
+              <select id="animal-selector" class="control-dropdown">
+                <option value="circle">⚫ Circles</option>
+                <option value="pig">🐷 Pig</option>
+                <option value="selfie">📸 Selfie</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label">Direction</label>
+              <select id="bounce-direction" class="control-dropdown">
+                <option value="horizontal">Horizontal</option>
+                <option value="vertical">Vertical</option>
+              </select>
+            </div>
+
+            <div class="control-group" id="color-picker-group">
+              <label class="control-label">Color</label>
+              <input type="color" id="circle-color" value="#000000" class="color-picker-main">
+            </div>
+          </div>
+
+          <!-- Utility Buttons -->
+          <div class="controls-utility">
+            <button id="fullscreen-btn" class="utility-btn" title="Fullscreen Mode">⛶</button>
+            <button id="settings-btn" class="utility-btn" title="Advanced Settings">⚙️</button>
           </div>
         </div>
       </main>

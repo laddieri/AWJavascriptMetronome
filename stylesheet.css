@@ -87,34 +87,44 @@ main {
 
 /* Controls */
 .controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background: #f7fafc;
   padding: 20px;
   border-radius: 16px;
-  align-items: end;
 }
 
-.control-group {
+/* Primary controls: Play button and tempo */
+.controls-primary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.controls-primary tone-play-toggle {
+  transform: scale(1.4);
+  flex-shrink: 0;
+}
+
+.tempo-controls {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.control-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #4a5568;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.tempo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* Animation dropdown */
-.animation-dropdown {
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 1rem;
+.tempo-dropdown {
+  padding: 8px 12px;
+  font-size: 0.85rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #2d3748;
   background-color: white;
@@ -125,26 +135,82 @@ main {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-  min-height: 48px;
+  background-position: right 8px center;
+  padding-right: 28px;
+  min-width: 130px;
 }
 
-.animation-dropdown:hover {
+.tempo-dropdown:hover {
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.animation-dropdown:focus {
+.tempo-dropdown:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
-/* Main color picker */
+.tempo-row tone-slider {
+  flex: 1;
+}
+
+/* Secondary controls: Animation settings */
+.controls-secondary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.control-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Control dropdown (animation, direction) */
+.control-dropdown {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #2d3748;
+  background-color: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.control-dropdown:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.control-dropdown:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Color picker */
 .color-picker-main {
   width: 100%;
-  height: 40px;
+  height: 38px;
   padding: 4px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
@@ -160,6 +226,32 @@ main {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Utility buttons (fullscreen, settings) */
+.controls-utility {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.utility-btn {
+  padding: 8px 12px;
+  font-size: 1.1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #4a5568;
+}
+
+.utility-btn:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+  transform: scale(1.05);
 }
 
 /* Tone.js UI components styling */
@@ -304,23 +396,21 @@ footer p {
 
 /* Tablet - medium screens */
 @media (max-width: 767px) {
-  .controls {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
+  .controls-primary {
+    gap: 16px;
   }
 
-  .control-group:last-child {
-    grid-column: 1 / -1;
-    justify-self: center;
-    margin-top: 8px;
+  .controls-primary tone-play-toggle {
+    transform: scale(1.2);
   }
 
-  tone-play-toggle {
-    transform: scale(1.1);
+  .tempo-dropdown {
+    min-width: 110px;
+    font-size: 0.8rem;
   }
 
-  .toggle:hover {
-    transform: scale(1.15);
+  .controls-secondary {
+    gap: 12px;
   }
 }
 
@@ -379,47 +469,67 @@ footer p {
     max-width: 100%;
   }
 
-  /* Controls in a row on mobile */
+  /* Controls on mobile */
   .controls {
-    grid-template-columns: 1fr 1fr auto;
-    gap: 8px;
-    padding: 10px;
-    border-radius: 8px;
-    align-items: end;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
   }
 
-  .control-group {
+  .controls-primary {
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .controls-primary tone-play-toggle {
+    transform: scale(1.2);
+  }
+
+  .tempo-controls {
     gap: 4px;
   }
 
-  .control-group:last-child {
-    grid-column: auto;
-    margin-top: 0;
+  .tempo-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .tempo-dropdown {
+    min-width: unset;
+    width: 100%;
   }
 
   .control-label {
     font-size: 0.6rem;
   }
 
-  .animation-dropdown {
+  .controls-secondary {
+    gap: 10px;
+  }
+
+  .control-group {
+    gap: 4px;
+    min-width: 80px;
+  }
+
+  .control-dropdown {
     padding: 8px 10px;
     font-size: 0.85rem;
-    min-height: 40px;
     padding-right: 28px;
-    background-position: right 8px center;
+  }
+
+  .controls-utility {
+    padding-top: 8px;
+  }
+
+  .utility-btn {
+    padding: 6px 10px;
+    font-size: 1rem;
   }
 
   tone-slider {
     padding: 4px 0;
-  }
-
-  tone-play-toggle {
-    transform: scale(1.1);
-    margin: 0 4px;
-  }
-
-  .toggle:hover {
-    transform: scale(1.15);
   }
 
   footer {
@@ -455,7 +565,12 @@ footer p {
     gap: 6px;
   }
 
-  tone-play-toggle {
+  .controls-primary {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .controls-primary tone-play-toggle {
     transform: scale(1.1);
   }
 
@@ -463,10 +578,14 @@ footer p {
     font-size: 0.55rem;
   }
 
-  .animation-dropdown {
+  .control-dropdown,
+  .tempo-dropdown {
     padding: 6px 8px;
     font-size: 0.8rem;
-    min-height: 36px;
+  }
+
+  .controls-utility {
+    padding-top: 6px;
   }
 }
 
