@@ -236,10 +236,25 @@ function getAnimationProgress() {
   if (Tone.Transport.state !== 'started') {
     return 0; // At center when stopped
   }
+
+  // Guard against uninitialized lastBeatTime (first beat hasn't fired yet)
+  if (lastBeatTime <= 0) {
+    return 0;
+  }
+
+  const now = Tone.now();
   const beatDuration = 60 / Tone.Transport.bpm.value;
-  const timeSinceLastBeat = Tone.now() - lastBeatTime;
-  // Clamp to 0-1 range in case of timing edge cases
-  return Math.min(Math.max(timeSinceLastBeat / beatDuration, 0), 1);
+  const timeSinceLastBeat = now - lastBeatTime;
+
+  // If timeSinceLastBeat is negative (clock adjustment) or exceeds 2 beat
+  // durations (tab was backgrounded, or scheduling hiccup), clamp to avoid
+  // visual glitches
+  if (timeSinceLastBeat < 0 || timeSinceLastBeat > beatDuration * 2) {
+    return 0;
+  }
+
+  // Clamp to 0-1 range for normal operation
+  return Math.min(timeSinceLastBeat / beatDuration, 1);
 }
 
 function getAnimalX(direction) {
@@ -878,14 +893,69 @@ function initSettingsListeners() {
   }
 }
 
-// Start Audio Context on Mouseclick
-document.documentElement.addEventListener(
-  "mousedown", function(){
-    mouse_IsDown = true;
-    if (Tone.context.state !== 'running') {
+// Robust AudioContext resume handling
+// Browsers require a user gesture to start audio. We listen on multiple event
+// types to catch the first interaction reliably across desktop and mobile.
+var audioContextResumed = false;
+
+function resumeAudioContext() {
+  if (audioContextResumed && Tone.context.state === 'running') return;
+
+  if (Tone.context.state !== 'running') {
+    Tone.context.resume().then(function() {
+      audioContextResumed = true;
+      Tone.Transport.bpm.value = cachedBPM || 60;
+    }).catch(function(err) {
+      console.warn('AudioContext resume failed, will retry on next interaction:', err);
+    });
+  } else {
+    audioContextResumed = true;
+  }
+}
+
+['mousedown', 'touchstart', 'keydown'].forEach(function(eventType) {
+  document.documentElement.addEventListener(eventType, resumeAudioContext, { once: false });
+});
+
+// Audio context state monitoring
+// Browsers can suspend the AudioContext at any time (e.g., after inactivity,
+// power-saving). We periodically check and attempt recovery when the transport
+// is supposed to be playing.
+setInterval(function() {
+  if (Tone.Transport.state === 'started' && Tone.context.state !== 'running') {
+    console.warn('AudioContext suspended while playing, attempting resume...');
     Tone.context.resume();
-    Tone.Transport.bpm.value = 60;
-}});
+  }
+}, 1000);
+
+// Tab visibility handling
+// When the tab is backgrounded, browsers throttle timers and may suspend the
+// AudioContext. We track this so we can resync animation state when returning.
+var wasPlayingBeforeHidden = false;
+var tabHiddenTime = 0;
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    // Tab is going to background
+    tabHiddenTime = Date.now();
+    wasPlayingBeforeHidden = Tone.Transport.state === 'started';
+  } else {
+    // Tab is returning to foreground
+    var hiddenDuration = Date.now() - tabHiddenTime;
+
+    // Re-resume AudioContext (browsers may suspend it while backgrounded)
+    if (Tone.context.state !== 'running') {
+      Tone.context.resume();
+    }
+
+    // If we were playing and were hidden for more than 500ms, resync the
+    // animation by snapping lastBeatTime to now. This prevents a huge
+    // timeSinceLastBeat value that would cause animation glitches.
+    if (wasPlayingBeforeHidden && hiddenDuration > 500) {
+      lastBeatTime = Tone.now();
+    }
+  }
+});
 
 // Create sound players and synthesizers for different animals
 var pigPlayer = new Tone.Player("./sounds/oink.wav").toMaster();
@@ -951,17 +1021,28 @@ function triggerSound(time, isAccent = false){
       circleSynth.triggerAttackRelease("A4", "16n", time);
       break;
     case 'pig':
+      // Stop any currently playing instance before retriggering to prevent
+      // overlapping playback at fast tempos
+      if (pigPlayer.state === 'started') {
+        pigPlayer.stop(time);
+      }
       pigPlayer.start(time);
       break;
     case 'selfie':
       // Use recorded sound if available, otherwise use default synth
       if (recordedSoundPlayer && recordedSoundPlayer.loaded) {
+        if (recordedSoundPlayer.state === 'started') {
+          recordedSoundPlayer.stop(time);
+        }
         recordedSoundPlayer.start(time);
       } else {
         selfieSynth.triggerAttackRelease("8n", time);
       }
       break;
     default:
+      if (pigPlayer.state === 'started') {
+        pigPlayer.stop(time);
+      }
       pigPlayer.start(time);
   }
 }
@@ -1042,12 +1123,29 @@ scheduleMainBeat();
 
 //start/stop the transport
 document.querySelector('tone-play-toggle').addEventListener('change', e => {
-  Tone.Transport.toggle();
-  // Reset beat counter when stopping so next play starts on beat 1
-  if (Tone.Transport.state !== 'started') {
-    currentBeat = 0;
+  // Ensure AudioContext is running before starting playback
+  if (Tone.context.state !== 'running') {
+    Tone.context.resume().then(function() {
+      toggleTransport();
+    });
+  } else {
+    toggleTransport();
   }
 })
+
+function toggleTransport() {
+  if (Tone.Transport.state === 'started') {
+    // Stopping: reset state for clean restart
+    Tone.Transport.stop();
+    currentBeat = 0;
+    lastBeatTime = 0;
+  } else {
+    // Starting: reset beat counter and start fresh
+    currentBeat = 0;
+    lastBeatTime = 0;
+    Tone.Transport.start();
+  }
+}
 
 //update BPM from slider
 document.querySelector('tone-slider').addEventListener('change', e => {
