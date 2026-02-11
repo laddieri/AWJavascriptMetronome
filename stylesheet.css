@@ -66,25 +66,23 @@ main {
   gap: 24px;
 }
 
-/* Animation stage */
-#animation-stage {
-  position: relative;
+/* Canvas wrapper */
+.canvas-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #696969;
+  background: #f7fafc;
   border-radius: 16px;
   padding: 16px;
   overflow: hidden;
-  width: 100%;
-  aspect-ratio: 4/3;
-  max-width: 800px;
-  margin: 0 auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-#animation-stage.flash {
-  background: white;
+.canvas-wrapper canvas {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: block !important;
+  max-width: 100%;
+  height: auto !important;
 }
 
 /* Controls */
@@ -1140,181 +1138,5 @@ footer p {
 
   .fullscreen-controls tone-play-toggle {
     transform: scale(1.2);
-  }
-}
-
-/* ===== CSS ANIMATION SYSTEM ===== */
-
-/* Animated elements base styles */
-.animated-element {
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background-color: #000000;
-  will-change: transform;
-  display: none;
-}
-
-.animated-element.active {
-  display: block;
-}
-
-/* Selfie images */
-.selfie-img {
-  position: absolute;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  border: 4px solid rgb(102, 126, 234);
-  object-fit: cover;
-  will-change: transform;
-  display: none;
-  background: #1a1a2e;
-}
-
-.selfie-img.active {
-  display: block;
-}
-
-.selfie-img.mirror {
-  transform: scaleX(-1);
-}
-
-/* Pig SVG */
-.pig-svg {
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  will-change: transform;
-  display: none;
-}
-
-.pig-svg.active {
-  display: block;
-}
-
-/* Vertical bounce line */
-#bounce-line {
-  position: absolute;
-  bottom: 15%;
-  left: 10%;
-  right: 10%;
-  height: 4px;
-  background: #cccccc;
-  display: none;
-}
-
-#bounce-line.active {
-  display: block;
-}
-
-/* Horizontal animation keyframes */
-@keyframes move-horizontal-left {
-  0% {
-    transform: translateX(-200px) translateY(0);
-  }
-  50% {
-    transform: translateX(0) translateY(0);
-  }
-  100% {
-    transform: translateX(-200px) translateY(0);
-  }
-}
-
-@keyframes move-horizontal-right {
-  0% {
-    transform: translateX(200px) translateY(0);
-  }
-  50% {
-    transform: translateX(0) translateY(0);
-  }
-  100% {
-    transform: translateX(200px) translateY(0);
-  }
-}
-
-@keyframes move-horizontal-right-mirror {
-  0% {
-    transform: translateX(200px) translateY(0) scaleX(-1);
-  }
-  50% {
-    transform: translateX(0) translateY(0) scaleX(-1);
-  }
-  100% {
-    transform: translateX(200px) translateY(0) scaleX(-1);
-  }
-}
-
-/* Vertical bounce animation */
-@keyframes bounce-vertical {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-260px);
-  }
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* Animation classes applied by JavaScript */
-.anim-horizontal-left {
-  animation-name: move-horizontal-left;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: both;
-}
-
-.anim-horizontal-right {
-  animation-name: move-horizontal-right;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: both;
-}
-
-.anim-horizontal-right-mirror {
-  animation-name: move-horizontal-right-mirror;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: both;
-}
-
-.anim-vertical {
-  animation-name: bounce-vertical;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: both;
-}
-
-/* Responsive scaling for animations */
-@media (max-width: 768px) {
-  .animated-element {
-    width: 140px;
-    height: 140px;
-  }
-
-  .selfie-img {
-    width: 220px;
-    height: 220px;
-  }
-
-  .pig-svg {
-    width: 200px;
-    height: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  .animated-element {
-    width: 100px;
-    height: 100px;
-  }
-
-  .selfie-img {
-    width: 160px;
-    height: 160px;
-  }
-
-  .pig-svg {
-    width: 150px;
-    height: 150px;
   }
 }

@@ -1,49 +1,112 @@
-// ===== VISUAL METRONOME - CSS ANIMATION VERSION =====
-// Uses Tone.js for timing and CSS animations for smooth, hardware-accelerated visuals
-
+var xpos=0;
+var rad=50;
+var t=0;
 var secondsPerBeat = 1;
 var cachedBPM = 60;
-var animalType = 'circle'; // 'circle', 'pig', 'selfie'
+var animal1;
+var animal2;
+var animalType = 'circle'; // 'circle', 'pig', 'cat', 'dog', 'bird', etc.
 var circleColor = '#000000'; // Color for circle animation
 
 // Selfie capture variables
-var selfieImageDataURL = null;
+var selfieImage = null;
 var cameraStream = null;
-var recordedSoundURL = null;
-var recordedSoundPlayer = null;
+var recordedSoundURL = null; // URL for recorded selfie sound
+var recordedSoundPlayer = null; // Tone.js Player for recorded sound
 var mediaRecorder = null;
 var audioChunks = [];
-var mirrorSelfies = true;
+var mirrorSelfies = true; // When true, selfie images face each other
 
 // Advanced metronome settings
 var beatsPerMeasure = 4;
 var currentBeat = 0;
 var subdivision = 'none'; // 'none', 'eighth', 'triplet', 'sixteenth'
-var animalSoundEnabled = true;
+var animalSoundEnabled = true; // Play animal sound on beat
 var accentEnabled = true;
-var flashEnabled = true;
-var voiceCountEnabled = false;
-var lastBeatTime = 0;
+var flashEnabled = true; // Flash background on beat
+var voiceCountEnabled = false; // Count beats aloud
+var lastBeatTime = 0; // Track when last beat fired for animation sync
 var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
-var isFullscreen = false;
-
-// DOM element references
-var animationStage;
-var animal1Element;
-var animal2Element;
-var bounceLine;
+var isFullscreen = false; // Fullscreen mode state
 
 // Voice counting with Web Speech API
 function speakBeatNumber(beatNumber) {
   if (!voiceCountEnabled) return;
   if ('speechSynthesis' in window) {
+    // Cancel any ongoing speech to prevent overlap
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(String(beatNumber));
-    utterance.rate = 1.5;
+    utterance.rate = 1.5; // Speak faster for quick beats
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
     window.speechSynthesis.speak(utterance);
   }
+}
+
+// Canvas dimensions (will be set dynamically)
+var canvasWidth = 640;
+var canvasHeight = 480;
+var canvasScale = 1;
+
+// Calculate responsive canvas size
+// Canvas fills available space while maintaining 4:3 aspect ratio
+function getCanvasSize() {
+  const wrapper = document.querySelector('.canvas-wrapper');
+  if (!wrapper) return { width: 640, height: 480, scale: 1 };
+
+  const maxWidth = wrapper.clientWidth - 32; // Account for padding
+  const maxHeight = wrapper.clientHeight - 32; // Account for padding
+  const baseWidth = 640;
+  const baseHeight = 480;
+  const aspectRatio = baseWidth / baseHeight;
+
+  // Start with max available width
+  let newWidth = maxWidth;
+  let newHeight = newWidth / aspectRatio;
+
+  // If height is constrained, scale down based on height
+  if (newHeight > maxHeight && maxHeight > 0) {
+    newHeight = maxHeight;
+    newWidth = newHeight * aspectRatio;
+  }
+
+  // Ensure minimum size for very small screens
+  if (newWidth < 200) {
+    newWidth = 200;
+    newHeight = newWidth / aspectRatio;
+  }
+
+  return {
+    width: Math.floor(newWidth),
+    height: Math.floor(newHeight),
+    scale: newWidth / baseWidth
+  };
+}
+
+// Calculate canvas size for fullscreen mode
+function getFullscreenCanvasSize() {
+  const wrapper = document.querySelector('.fullscreen-canvas-wrapper');
+  if (!wrapper) return getCanvasSize();
+
+  const maxWidth = wrapper.clientWidth - 40;
+  const maxHeight = wrapper.clientHeight - 40;
+  const baseWidth = 640;
+  const baseHeight = 480;
+  const aspectRatio = baseWidth / baseHeight;
+
+  let newWidth = maxWidth;
+  let newHeight = newWidth / aspectRatio;
+
+  if (newHeight > maxHeight && maxHeight > 0) {
+    newHeight = maxHeight;
+    newWidth = newHeight * aspectRatio;
+  }
+
+  return {
+    width: Math.floor(newWidth),
+    height: Math.floor(newHeight),
+    scale: newWidth / baseWidth
+  };
 }
 
 // Store reference to main toggle's original parent
@@ -53,14 +116,14 @@ var mainToggleParent = null;
 function enterFullscreen() {
   isFullscreen = true;
   const overlay = document.getElementById('fullscreen-overlay');
-  const stage = document.getElementById('animation-stage');
+  const canvas = document.querySelector('.canvas-wrapper canvas');
   const fullscreenWrapper = document.querySelector('.fullscreen-canvas-wrapper');
   const mainToggle = document.querySelector('.controls tone-play-toggle');
   const togglePlaceholder = document.getElementById('fullscreen-toggle-placeholder');
 
-  // Move stage to fullscreen wrapper
-  if (stage && fullscreenWrapper) {
-    fullscreenWrapper.appendChild(stage);
+  // Move canvas to fullscreen wrapper
+  if (canvas && fullscreenWrapper) {
+    fullscreenWrapper.appendChild(canvas);
   }
 
   // Move play toggle to fullscreen controls
@@ -77,19 +140,28 @@ function enterFullscreen() {
   if (fullscreenSlider) {
     fullscreenSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
+
+  // Resize canvas for fullscreen
+  setTimeout(() => {
+    const size = getFullscreenCanvasSize();
+    canvasWidth = size.width;
+    canvasHeight = size.height;
+    canvasScale = size.scale;
+    resizeCanvas(canvasWidth, canvasHeight);
+  }, 50);
 }
 
 // Exit fullscreen mode
 function exitFullscreen() {
   isFullscreen = false;
   const overlay = document.getElementById('fullscreen-overlay');
-  const stage = document.querySelector('.fullscreen-canvas-wrapper #animation-stage');
-  const normalWrapper = document.querySelector('.container > main > .canvas-wrapper');
+  const canvas = document.querySelector('.fullscreen-canvas-wrapper canvas');
+  const normalWrapper = document.querySelector('.canvas-wrapper');
   const mainToggle = document.querySelector('#fullscreen-toggle-placeholder tone-play-toggle');
 
-  // Move stage back to normal wrapper
-  if (stage && normalWrapper) {
-    normalWrapper.appendChild(stage);
+  // Move canvas back to normal wrapper
+  if (canvas && normalWrapper) {
+    normalWrapper.appendChild(canvas);
   }
 
   // Move play toggle back to main controls
@@ -105,6 +177,15 @@ function exitFullscreen() {
   if (mainSlider) {
     mainSlider.setAttribute('value', Tone.Transport.bpm.value);
   }
+
+  // Resize canvas for normal mode
+  setTimeout(() => {
+    const size = getCanvasSize();
+    canvasWidth = size.width;
+    canvasHeight = size.height;
+    canvasScale = size.scale;
+    resizeCanvas(canvasWidth, canvasHeight);
+  }, 50);
 }
 
 // Initialize fullscreen listeners
@@ -113,19 +194,23 @@ function initFullscreenListeners() {
   const exitBtn = document.getElementById('fullscreen-exit-btn');
   const fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
 
+  // Enter fullscreen
   if (fullscreenBtn) {
     fullscreenBtn.addEventListener('click', enterFullscreen);
   }
 
+  // Exit fullscreen
   if (exitBtn) {
     exitBtn.addEventListener('click', exitFullscreen);
   }
 
+  // Fullscreen tempo slider
   if (fullscreenSlider) {
     fullscreenSlider.addEventListener('change', e => {
       Tone.Transport.bpm.value = e.detail;
       cachedBPM = e.detail;
       secondsPerBeat = 1 / (e.detail / 60);
+      // Sync main slider
       const mainSlider = document.querySelector('.controls tone-slider');
       if (mainSlider) {
         mainSlider.setAttribute('value', e.detail);
@@ -141,6 +226,260 @@ function initFullscreenListeners() {
   });
 }
 
+// Smoothed animation progress for fluid motion
+var smoothedProgress = 0;
+var lastFrameTime = 0;
+
+// Calculate animation position based on time since last beat fired
+// This stays in sync even when BPM changes mid-playback
+function getAnimationProgress() {
+  if (Tone.Transport.state !== 'started') {
+    return 0; // At center when stopped
+  }
+
+  // Guard against uninitialized lastBeatTime (first beat hasn't fired yet)
+  if (lastBeatTime <= 0) {
+    return 0;
+  }
+
+  const now = Tone.now();
+  const beatDuration = 60 / Tone.Transport.bpm.value;
+  const timeSinceLastBeat = now - lastBeatTime;
+
+  // If timeSinceLastBeat is negative (clock adjustment) or exceeds 2 beat
+  // durations (tab was backgrounded, or scheduling hiccup), clamp to avoid
+  // visual glitches
+  if (timeSinceLastBeat < 0 || timeSinceLastBeat > beatDuration * 2) {
+    return 0;
+  }
+
+  // Clamp to 0-1 range for normal operation
+  return Math.min(timeSinceLastBeat / beatDuration, 1);
+}
+
+function getAnimalX(direction) {
+  const rawProgress = getAnimationProgress();
+
+  // Apply easing for smoother acceleration/deceleration
+  // Using sine easing which naturally smooths the motion
+  const easedProgress = rawProgress;
+
+  // Sine wave: 0 at start, peaks at 0.5, returns to 0 at 1
+  // This creates smooth motion where animals meet at center on the beat
+  // Use base coordinate system (640x480) - scale() handles actual sizing
+  const baseWidth = 640;
+  const baseDisplacement = 200;
+  const displacement = Math.sin(easedProgress * Math.PI) * baseDisplacement;
+  return direction * displacement + (baseWidth / 2);
+}
+
+// Get Y position for vertical bounce mode
+function getVerticalY() {
+  const rawProgress = getAnimationProgress();
+  const lineY = 420; // Where the horizontal line is (lowered)
+  const bounceBottom = 350; // Object center at lowest point (~20% below line)
+  const maxHeight = 260; // How high the object bounces from bottom
+
+  // Object center is at bounceBottom when progress = 0 (on the beat)
+  // About 20% of object passes below the line
+  const displacement = Math.sin(rawProgress * Math.PI) * maxHeight;
+  return bounceBottom - displacement;
+}
+
+// Easing functions for smooth animations
+const Easing = {
+  // Exponential ease out - perfect for gravity/falling
+  easeOutExpo: function(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  },
+
+  // Bounce ease out - realistic bouncing effect
+  easeOutBounce: function(t) {
+    const n1 = 7.5625;
+    const d1 = 2.75;
+
+    if (t < 1 / d1) {
+      return n1 * t * t;
+    } else if (t < 2 / d1) {
+      return n1 * (t -= 1.5 / d1) * t + 0.75;
+    } else if (t < 2.5 / d1) {
+      return n1 * (t -= 2.25 / d1) * t + 0.9375;
+    } else {
+      return n1 * (t -= 2.625 / d1) * t + 0.984375;
+    }
+  },
+
+  // Quadratic ease in-out for smooth acceleration
+  easeInOutQuad: function(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+};
+
+class Circle {
+  constructor(direction){
+    this.direction = direction;
+    this.x = 100;
+    this.y = 240;
+    this.baseY = 240;
+    this.size = 180; // Diameter of the circle
+  }
+
+  pigmove(){
+    this.x = getAnimalX(this.direction);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    // Draw a simple filled circle
+    noStroke();
+    fill(circleColor);
+    ellipse(bodyX, bodyY, this.size, this.size);
+  }
+}
+
+class Pig {
+  constructor(direction){
+    this.direction=direction;
+    this.x = 100;
+    this.y = 240; // Base Y position
+    this.baseY = 240;
+  }
+
+  pigmove(){
+    this.x = getAnimalX(this.direction);
+    this.y = this.baseY;
+  }
+
+  display(){
+      var bodyX = this.x; // variables
+      var bodyY = this.y;
+      fill(250, 192, 196); //legs
+    rect(bodyX+18, bodyY+73, 18, 68);
+    rect(bodyX-47, bodyY+71, 18, 68);
+
+    ellipse(bodyX, bodyY, 245, 245); // body
+
+    fill(163, 124, 127);//lefteare
+    triangle(bodyX, bodyY-54, bodyX-70, bodyY+15, bodyX-66,bodyY-87);
+
+    //rightears
+    triangle(bodyX+65, bodyY+24, bodyX+70, bodyY-85, bodyX-8,bodyY-58);
+    fill(13, 13, 13); // earefill
+
+    triangle(bodyX+26, bodyY+62, bodyX+65, bodyY-77, bodyX-38,bodyY-24); // earefill
+    triangle(bodyX, bodyY-31, bodyX-52, bodyY+38, bodyX-59,bodyY-77);
+    fill(217, 165, 169);
+    ellipse(bodyX, bodyY, 155, 144); //head
+
+    fill(224, 107, 117); //nose
+    ellipse(bodyX, bodyY+13, 71, 60);
+
+    fill(0, 0, 0); //nosefill
+    ellipse(bodyX-10, bodyY+12, 11, 19);
+    ellipse(bodyX+10, bodyY+12, 11, 19);
+
+    ellipse(bodyX-17, bodyY-24, 6, 15); //pupils
+    ellipse(bodyX+17, bodyY-24, 6, 15);
+
+    fill(259, 192, 196); //legs
+    rect(bodyX-81, bodyY+78, 18, 68);
+    rect(bodyX+51, bodyY+72, 18, 68);
+    fill(8, 8, 8);
+    ellipse(bodyX-72, bodyY+141, 21, 11);
+    ellipse(bodyX+60, bodyY+141, 21, 11);
+    ellipse(bodyX-38, bodyY+138, 18, 10);
+    ellipse(bodyX+28, bodyY+138, 18, 10);
+  }
+}
+
+class Selfie {
+  constructor(direction){
+    this.direction = direction;
+    this.x = 100;
+    this.y = 240;
+    this.baseY = 240;
+    this.size = 280; // Size of the circular face (larger for better visibility)
+  }
+
+  pigmove(){
+    this.x = getAnimalX(this.direction);
+    this.y = this.baseY;
+  }
+
+  display(){
+    var bodyX = this.x;
+    var bodyY = this.y;
+
+    if (selfieImage) {
+      // Draw the selfie image in a circle
+      push();
+
+      // Create circular clipping mask
+      imageMode(CENTER);
+
+      // Draw circular border/background
+      fill(255);
+      stroke(102, 126, 234); // Purple border
+      strokeWeight(4);
+      ellipse(bodyX, bodyY, this.size + 8, this.size + 8);
+
+      // Clip to circle and draw image
+      // Use a graphics buffer for circular mask
+      let diameter = this.size;
+
+      // Draw the image
+      noStroke();
+
+      // Create circular clip using drawingContext
+      drawingContext.save();
+      drawingContext.beginPath();
+      drawingContext.arc(bodyX, bodyY, diameter / 2, 0, Math.PI * 2);
+      drawingContext.clip();
+
+      // Draw the selfie image
+      // When mirrorSelfies is true, mirror based on direction so images face each other
+      // direction 1 = right side, direction -1 = left side
+      push();
+      translate(bodyX, bodyY);
+      if (mirrorSelfies) {
+        // Mirror the right image (direction 1) so they face each other
+        if (this.direction === 1) {
+          scale(-1, 1);
+        }
+      } else {
+        // When not mirroring, show both images with same orientation (mirrored for natural selfie look)
+        scale(-1, 1);
+      }
+      image(selfieImage, 0, 0, diameter, diameter);
+      pop();
+
+      drawingContext.restore();
+
+      pop();
+    } else {
+      // Placeholder when no selfie is captured
+      fill(200);
+      stroke(150);
+      strokeWeight(3);
+      ellipse(bodyX, bodyY, this.size, this.size);
+
+      // Draw camera icon placeholder
+      noStroke();
+      fill(120);
+      textAlign(CENTER, CENTER);
+      textSize(40);
+      text("📸", bodyX, bodyY);
+
+      textSize(14);
+      fill(100);
+      text("Select Selfie", bodyX, bodyY + 50);
+    }
+  }
+}
+
 // Camera functions
 function openCamera() {
   const modal = document.getElementById('camera-modal');
@@ -148,6 +487,7 @@ function openCamera() {
 
   modal.classList.remove('hidden');
 
+  // Request camera access
   navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: 'user',
@@ -172,6 +512,7 @@ function closeCamera() {
 
   modal.classList.add('hidden');
 
+  // Stop camera stream
   if (cameraStream) {
     cameraStream.getTracks().forEach(track => track.stop());
     cameraStream = null;
@@ -197,24 +538,26 @@ function capturePhoto() {
   // Draw the center square of the video
   ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
 
-  // Store as data URL
-  selfieImageDataURL = captureCanvas.toDataURL('image/png');
-
-  // Update selfie images
-  updateSelfieImages();
+  // Convert to p5.js image
+  selfieImage = loadImage(captureCanvas.toDataURL('image/png'), () => {
+    // Image loaded, recreate animals to use it
+    createAnimals();
+  });
 
   closeCamera();
 }
 
 // Sound recording functions
-var isCountingDown = false;
+var isCountingDown = false; // Track if countdown is in progress
 
 function startRecording() {
   const recordBtn = document.getElementById('record-sound-btn');
   const recordingStatus = document.getElementById('recording-status');
 
+  // Prevent starting if already counting down
   if (isCountingDown) return;
 
+  // Start countdown
   isCountingDown = true;
   recordBtn.disabled = true;
   recordBtn.textContent = '3...';
@@ -229,6 +572,7 @@ function startRecording() {
     recordBtn.textContent = '1...';
   }, 2000);
 
+  // After 3 seconds, start actual recording
   setTimeout(() => {
     isCountingDown = false;
     recordBtn.disabled = false;
@@ -243,24 +587,27 @@ async function trimSilence(audioBlob) {
 
   try {
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    const channelData = audioBuffer.getChannelData(0);
+    const channelData = audioBuffer.getChannelData(0); // Get first channel
     const sampleRate = audioBuffer.sampleRate;
 
-    const threshold = 0.01;
+    // Find first non-silent sample (threshold-based)
+    const threshold = 0.01; // Adjust sensitivity
     let startSample = 0;
     let endSample = channelData.length - 1;
 
-    // Find start
+    // Find start (first sample above threshold)
     for (let i = 0; i < channelData.length; i++) {
       if (Math.abs(channelData[i]) > threshold) {
+        // Add small buffer before sound (50ms)
         startSample = Math.max(0, i - Math.floor(sampleRate * 0.05));
         break;
       }
     }
 
-    // Find end
+    // Find end (last sample above threshold)
     for (let i = channelData.length - 1; i >= 0; i--) {
       if (Math.abs(channelData[i]) > threshold) {
+        // Add small buffer after sound (100ms)
         endSample = Math.min(channelData.length - 1, i + Math.floor(sampleRate * 0.1));
         break;
       }
@@ -283,14 +630,14 @@ async function trimSilence(audioBlob) {
       }
     }
 
-    // Convert back to blob (WAV format)
+    // Convert back to blob (WAV format for better compatibility)
     const wavBlob = audioBufferToWav(trimmedBuffer);
     audioContext.close();
     return wavBlob;
   } catch (err) {
     console.error('Error trimming audio:', err);
     audioContext.close();
-    return audioBlob;
+    return audioBlob; // Return original if trimming fails
   }
 }
 
@@ -315,7 +662,7 @@ function audioBufferToWav(buffer) {
   view.setUint32(4, 36 + dataLength, true);
   writeString(view, 8, 'WAVE');
   writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
+  view.setUint32(16, 16, true); // fmt chunk size
   view.setUint16(20, format, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
@@ -363,23 +710,27 @@ function actuallyStartRecording() {
       };
 
       mediaRecorder.onstop = async () => {
+        // Stop the audio stream
         stream.getTracks().forEach(track => track.stop());
 
         recordingStatus.textContent = 'Processing...';
 
+        // Create audio blob and trim silence
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const trimmedBlob = await trimSilence(audioBlob);
 
+        // Revoke old URL if exists
         if (recordedSoundURL) {
           URL.revokeObjectURL(recordedSoundURL);
         }
 
         recordedSoundURL = URL.createObjectURL(trimmedBlob);
 
+        // Create Tone.js Player with recorded sound
         if (recordedSoundPlayer) {
           recordedSoundPlayer.dispose();
         }
-        recordedSoundPlayer = new Tone.Player(recordedSoundURL).toDestination();
+        recordedSoundPlayer = new Tone.Player(recordedSoundURL).toMaster();
 
         recordingStatus.textContent = '✓ Sound recorded & trimmed!';
         recordingStatus.classList.remove('recording');
@@ -391,6 +742,7 @@ function actuallyStartRecording() {
       recordingStatus.textContent = 'Recording...';
       recordingStatus.classList.add('recording');
 
+      // Auto-stop after 2 seconds for a short sound
       setTimeout(() => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
           stopRecording();
@@ -433,10 +785,11 @@ function initCameraListeners() {
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       closeCamera();
-      if (!selfieImageDataURL) {
+      // Revert to previous animal if no selfie was taken
+      if (!selfieImage) {
         document.getElementById('animal-selector').value = 'pig';
         animalType = 'pig';
-        updateAnimationType();
+        createAnimals();
       }
     });
   }
@@ -444,11 +797,11 @@ function initCameraListeners() {
     recordBtn.addEventListener('click', toggleRecording);
   }
 
+  // Mirror selfies checkbox
   const mirrorCheckbox = document.getElementById('mirror-selfies');
   if (mirrorCheckbox) {
     mirrorCheckbox.addEventListener('change', (e) => {
       mirrorSelfies = e.target.checked;
-      updateSelfieImages();
     });
   }
 }
@@ -460,19 +813,23 @@ function initSettingsListeners() {
   const settingsCloseBtn = document.getElementById('settings-close-btn');
   const timeSignatureSelect = document.getElementById('time-signature');
   const subdivisionSelect = document.getElementById('subdivision');
+  const accentCheckbox = document.getElementById('accent-enabled');
 
+  // Open settings modal
   if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
       settingsModal.classList.remove('hidden');
     });
   }
 
+  // Close settings modal
   if (settingsCloseBtn) {
     settingsCloseBtn.addEventListener('click', () => {
       settingsModal.classList.add('hidden');
     });
   }
 
+  // Close modal when clicking outside
   if (settingsModal) {
     settingsModal.addEventListener('click', (e) => {
       if (e.target === settingsModal) {
@@ -481,19 +838,22 @@ function initSettingsListeners() {
     });
   }
 
+  // Time signature change
   if (timeSignatureSelect) {
     timeSignatureSelect.addEventListener('change', (e) => {
       beatsPerMeasure = parseInt(e.target.value);
-      currentBeat = 0;
+      currentBeat = 0; // Reset to beat 1
     });
   }
 
+  // Subdivision change
   if (subdivisionSelect) {
     subdivisionSelect.addEventListener('change', (e) => {
       subdivision = e.target.value;
     });
   }
 
+  // Animal sound toggle
   const animalSoundCheckbox = document.getElementById('animal-sound-enabled');
   if (animalSoundCheckbox) {
     animalSoundCheckbox.addEventListener('change', (e) => {
@@ -501,13 +861,14 @@ function initSettingsListeners() {
     });
   }
 
-  const accentCheckbox = document.getElementById('accent-enabled');
+  // Accent toggle
   if (accentCheckbox) {
     accentCheckbox.addEventListener('change', (e) => {
       accentEnabled = e.target.checked;
     });
   }
 
+  // Flash toggle
   const flashCheckbox = document.getElementById('flash-enabled');
   if (flashCheckbox) {
     flashCheckbox.addEventListener('change', (e) => {
@@ -515,6 +876,7 @@ function initSettingsListeners() {
     });
   }
 
+  // Voice count toggle
   const voiceCountCheckbox = document.getElementById('voice-count-enabled');
   if (voiceCountCheckbox) {
     voiceCountCheckbox.addEventListener('change', (e) => {
@@ -522,16 +884,18 @@ function initSettingsListeners() {
     });
   }
 
+  // Circle color picker
   const circleColorPicker = document.getElementById('circle-color');
   if (circleColorPicker) {
     circleColorPicker.addEventListener('input', (e) => {
       circleColor = e.target.value;
-      updateCircleColors();
     });
   }
 }
 
 // Robust AudioContext resume handling
+// Browsers require a user gesture to start audio. We listen on multiple event
+// types to catch the first interaction reliably across desktop and mobile.
 var audioContextResumed = false;
 
 function resumeAudioContext() {
@@ -554,6 +918,9 @@ function resumeAudioContext() {
 });
 
 // Audio context state monitoring
+// Browsers can suspend the AudioContext at any time (e.g., after inactivity,
+// power-saving). We periodically check and attempt recovery when the transport
+// is supposed to be playing.
 setInterval(function() {
   if (Tone.Transport.state === 'started' && Tone.context.state !== 'running') {
     console.warn('AudioContext suspended while playing, attempting resume...');
@@ -562,29 +929,38 @@ setInterval(function() {
 }, 1000);
 
 // Tab visibility handling
+// When the tab is backgrounded, browsers throttle timers and may suspend the
+// AudioContext. We track this so we can resync animation state when returning.
 var wasPlayingBeforeHidden = false;
 var tabHiddenTime = 0;
 
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
+    // Tab is going to background
     tabHiddenTime = Date.now();
     wasPlayingBeforeHidden = Tone.Transport.state === 'started';
   } else {
+    // Tab is returning to foreground
     var hiddenDuration = Date.now() - tabHiddenTime;
 
+    // Re-resume AudioContext (browsers may suspend it while backgrounded)
     if (Tone.context.state !== 'running') {
       Tone.context.resume();
     }
 
+    // If we were playing and were hidden for more than 500ms, resync the
+    // animation by snapping lastBeatTime to now. This prevents a huge
+    // timeSinceLastBeat value that would cause animation glitches.
     if (wasPlayingBeforeHidden && hiddenDuration > 500) {
       lastBeatTime = Tone.now();
     }
   }
 });
 
-// Create sound players and synthesizers
-var pigPlayer = new Tone.Player("./sounds/oink.wav").toDestination();
+// Create sound players and synthesizers for different animals
+var pigPlayer = new Tone.Player("./sounds/oink.wav").toMaster();
 
+// Selfie clap synth - snappy percussive sound
 var selfieSynth = new Tone.NoiseSynth({
   noise: { type: "white" },
   envelope: {
@@ -593,8 +969,9 @@ var selfieSynth = new Tone.NoiseSynth({
     sustain: 0,
     release: 0.1
   }
-}).toDestination();
+}).toMaster();
 
+// Circle click synth - clean metronome tick
 var circleSynth = new Tone.Synth({
   oscillator: { type: "sine" },
   envelope: {
@@ -603,8 +980,9 @@ var circleSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
+}).toMaster();
 
+// Subdivision click synth - soft tick for subdivisions
 var subdivisionSynth = new Tone.Synth({
   oscillator: { type: "triangle" },
   envelope: {
@@ -613,9 +991,10 @@ var subdivisionSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
-subdivisionSynth.volume.value = -12;
+}).toMaster();
+subdivisionSynth.volume.value = -12; // Quieter than main beat
 
+// Accent synth - louder, higher-pitched click for beat 1
 var accentSynth = new Tone.Synth({
   oscillator: { type: "triangle" },
   envelope: {
@@ -624,15 +1003,17 @@ var accentSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
-accentSynth.volume.value = 0;
+}).toMaster();
+accentSynth.volume.value = 0; // Audible accent level
 
-// Trigger sound based on animal type
+// TriggerSound Play - switches based on animal type
 function triggerSound(time, isAccent = false){
+  // Play accent on beat 1 if enabled (higher pitched click)
   if (isAccent && accentEnabled) {
     accentSynth.triggerAttackRelease("G5", "16n", time);
   }
 
+  // Play animal sound if enabled
   if (!animalSoundEnabled) return;
 
   switch(animalType) {
@@ -640,12 +1021,15 @@ function triggerSound(time, isAccent = false){
       circleSynth.triggerAttackRelease("A4", "16n", time);
       break;
     case 'pig':
+      // Stop any currently playing instance before retriggering to prevent
+      // overlapping playback at fast tempos
       if (pigPlayer.state === 'started') {
         pigPlayer.stop(time);
       }
       pigPlayer.start(time);
       break;
     case 'selfie':
+      // Use recorded sound if available, otherwise use default synth
       if (recordedSoundPlayer && recordedSoundPlayer.loaded) {
         if (recordedSoundPlayer.state === 'started') {
           recordedSoundPlayer.stop(time);
@@ -668,7 +1052,45 @@ function triggerSubdivision(time) {
   subdivisionSynth.triggerAttackRelease("C5", "32n", time);
 }
 
+// Subdivision event IDs (to cancel when settings change)
+var subdivisionEvents = [];
+
+// Schedule main beat sound
+function scheduleMainBeat() {
+  Tone.Transport.scheduleRepeat(function(time) {
+    // Determine if this is beat 1 (accented)
+    const isAccent = currentBeat === 0;
+    triggerSound(time, isAccent);
+
+    // Schedule subdivisions for this beat
+    scheduleSubdivisionsForBeat(time);
+
+    // Store beat number before it gets incremented
+    const beatToSpeak = currentBeat + 1; // 1-indexed for speaking
+
+    // Speak beat number immediately (before Tone.Draw) to compensate for speech synthesis latency
+    speakBeatNumber(beatToSpeak);
+
+    // Reset animation timer to sync with beat
+    Tone.Draw.schedule(function(){
+      t = 0;
+      // Record when this beat fired for animation sync
+      lastBeatTime = Tone.now();
+      // Update cached BPM only if it changed
+      const currentBPM = Tone.Transport.bpm.value;
+      if (cachedBPM !== currentBPM) {
+        cachedBPM = currentBPM;
+        secondsPerBeat = 1 / (currentBPM / 60);
+      }
+    }, time);
+
+    // Advance beat counter
+    currentBeat = (currentBeat + 1) % beatsPerMeasure;
+  }, "4n");
+}
+
 // Schedule subdivisions for a single beat
+// Uses direct synth triggering with audio context time for precise timing
 function scheduleSubdivisionsForBeat(beatTime) {
   if (subdivision === 'none') return;
 
@@ -676,15 +1098,18 @@ function scheduleSubdivisionsForBeat(beatTime) {
 
   switch(subdivision) {
     case 'eighth':
+      // One subdivision at the halfway point
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 2);
       break;
 
     case 'triplet':
+      // Two subdivisions dividing beat into thirds
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 3);
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + (beatDuration * 2) / 3);
       break;
 
     case 'sixteenth':
+      // Three subdivisions dividing beat into quarters
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 4);
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + beatDuration / 2);
       subdivisionSynth.triggerAttackRelease("C5", "32n", beatTime + (beatDuration * 3) / 4);
@@ -692,87 +1117,13 @@ function scheduleSubdivisionsForBeat(beatTime) {
   }
 }
 
-// ===== CSS ANIMATION SYSTEM =====
-
-// Trigger CSS animation on beat
-function triggerCSSAnimation() {
-  const beatDuration = 60 / Tone.Transport.bpm.value;
-
-  // Handle flash effect
-  if (flashEnabled) {
-    animationStage.classList.add('flash');
-    setTimeout(() => {
-      animationStage.classList.remove('flash');
-    }, beatDuration * 1000 * 0.08); // Flash for 8% of beat duration
-  }
-
-  // Reset and restart animations
-  if (bounceDirection === 'horizontal') {
-    // Remove animation class to reset
-    animal1Element.style.animation = 'none';
-    animal2Element.style.animation = 'none';
-
-    // Force reflow to restart animation
-    void animal1Element.offsetHeight;
-    void animal2Element.offsetHeight;
-
-    // Apply animation with current beat duration
-    const animDuration = `${beatDuration}s`;
-    animal1Element.style.animationDuration = animDuration;
-    animal2Element.style.animationDuration = animDuration;
-
-    // Determine animation class based on animal type and mirror setting
-    if (animalType === 'selfie' && mirrorSelfies) {
-      animal1Element.style.animation = `move-horizontal-left ${animDuration} ease-in-out both`;
-      animal2Element.style.animation = `move-horizontal-right-mirror ${animDuration} ease-in-out both`;
-    } else {
-      animal1Element.style.animation = `move-horizontal-left ${animDuration} ease-in-out both`;
-      animal2Element.style.animation = `move-horizontal-right ${animDuration} ease-in-out both`;
-    }
-  } else {
-    // Vertical mode
-    animal1Element.style.animation = 'none';
-    void animal1Element.offsetHeight;
-
-    const animDuration = `${beatDuration}s`;
-    animal1Element.style.animationDuration = animDuration;
-    animal1Element.style.animation = `bounce-vertical ${animDuration} ease-in-out both`;
-  }
-}
-
-// Schedule main beat sound and animation
-function scheduleMainBeat() {
-  Tone.Transport.scheduleRepeat(function(time) {
-    const isAccent = currentBeat === 0;
-    triggerSound(time, isAccent);
-
-    scheduleSubdivisionsForBeat(time);
-
-    const beatToSpeak = currentBeat + 1;
-    speakBeatNumber(beatToSpeak);
-
-    // Trigger CSS animation on main thread
-    Tone.Draw.schedule(function(){
-      lastBeatTime = Tone.now();
-      const currentBPM = Tone.Transport.bpm.value;
-      if (cachedBPM !== currentBPM) {
-        cachedBPM = currentBPM;
-        secondsPerBeat = 1 / (currentBPM / 60);
-      }
-
-      // Trigger CSS animation
-      triggerCSSAnimation();
-    }, time);
-
-    currentBeat = (currentBeat + 1) % beatsPerMeasure;
-  }, "4n");
-}
-
 // Initialize the main beat schedule
 scheduleMainBeat();
 
-// Start/stop the transport
+
+//start/stop the transport
 document.querySelector('tone-play-toggle').addEventListener('change', e => {
+  // Ensure AudioContext is running before starting playback
   if (Tone.context.state !== 'running') {
     Tone.context.resume().then(function() {
       toggleTransport();
@@ -784,103 +1135,24 @@ document.querySelector('tone-play-toggle').addEventListener('change', e => {
 
 function toggleTransport() {
   if (Tone.Transport.state === 'started') {
+    // Stopping: reset state for clean restart
     Tone.Transport.stop();
     currentBeat = 0;
     lastBeatTime = 0;
   } else {
+    // Starting: reset beat counter and start fresh
     currentBeat = 0;
     lastBeatTime = 0;
     Tone.Transport.start();
   }
 }
 
-// Update BPM from slider
+//update BPM from slider
 document.querySelector('tone-slider').addEventListener('change', e => {
   Tone.Transport.bpm.value = e.detail;
   cachedBPM = e.detail;
   secondsPerBeat = 1 / (e.detail / 60);
 })
-
-// ===== ANIMATION TYPE MANAGEMENT =====
-
-// Create pig SVG content
-function createPigSVG() {
-  const pigSVG = `
-    <!-- Back legs -->
-    <rect x="118" y="173" width="18" height="68" fill="rgb(250, 192, 196)"/>
-    <rect x="53" y="171" width="18" height="68" fill="rgb(250, 192, 196)"/>
-
-    <!-- Body -->
-    <ellipse cx="125" cy="125" rx="122.5" ry="122.5" fill="rgb(250, 192, 196)"/>
-
-    <!-- Left ear -->
-    <polygon points="125,71 55,140 59,38" fill="rgb(163, 124, 127)"/>
-
-    <!-- Right ear -->
-    <polygon points="190,149 195,40 117,67" fill="rgb(163, 124, 127)"/>
-
-    <!-- Ear fill -->
-    <polygon points="151,187 190,48 87,101" fill="rgb(13, 13, 13)"/>
-    <polygon points="125,94 73,163 66,48" fill="rgb(13, 13, 13)"/>
-
-    <!-- Head -->
-    <ellipse cx="125" cy="125" rx="77.5" ry="72" fill="rgb(217, 165, 169)"/>
-
-    <!-- Nose -->
-    <ellipse cx="125" cy="138" rx="35.5" ry="30" fill="rgb(224, 107, 117)"/>
-
-    <!-- Nostrils -->
-    <ellipse cx="115" cy="137" rx="5.5" ry="9.5" fill="rgb(0, 0, 0)"/>
-    <ellipse cx="135" cy="137" rx="5.5" ry="9.5" fill="rgb(0, 0, 0)"/>
-
-    <!-- Pupils -->
-    <ellipse cx="108" cy="101" rx="3" ry="7.5" fill="rgb(0, 0, 0)"/>
-    <ellipse cx="142" cy="101" rx="3" ry="7.5" fill="rgb(0, 0, 0)"/>
-
-    <!-- Front legs -->
-    <rect x="44" y="203" width="18" height="68" fill="rgb(250, 192, 196)"/>
-    <rect x="176" y="197" width="18" height="68" fill="rgb(250, 192, 196)"/>
-
-    <!-- Hooves -->
-    <ellipse cx="53" cy="266" rx="10.5" ry="5.5" fill="rgb(8, 8, 8)"/>
-    <ellipse cx="185" cy="266" rx="10.5" ry="5.5" fill="rgb(8, 8, 8)"/>
-    <ellipse cx="62" cy="263" rx="9" ry="5" fill="rgb(8, 8, 8)"/>
-    <ellipse cx="153" cy="263" rx="9" ry="5" fill="rgb(8, 8, 8)"/>
-  `;
-
-  const pig1 = document.getElementById('pig1');
-  const pig2 = document.getElementById('pig2');
-  if (pig1) pig1.innerHTML = pigSVG;
-  if (pig2) pig2.innerHTML = pigSVG;
-}
-
-// Update selfie images
-function updateSelfieImages() {
-  const selfie1 = document.getElementById('selfie1');
-  const selfie2 = document.getElementById('selfie2');
-
-  if (selfieImageDataURL) {
-    if (selfie1) selfie1.src = selfieImageDataURL;
-    if (selfie2) selfie2.src = selfieImageDataURL;
-
-    // Update mirror class based on setting
-    if (mirrorSelfies) {
-      selfie1.classList.remove('mirror');
-      selfie2.classList.add('mirror');
-    } else {
-      selfie1.classList.add('mirror');
-      selfie2.classList.add('mirror');
-    }
-  }
-}
-
-// Update circle colors
-function updateCircleColors() {
-  const circles = document.querySelectorAll('.animated-element');
-  circles.forEach(circle => {
-    circle.style.backgroundColor = circleColor;
-  });
-}
 
 // Show/hide color picker based on animation type
 function updateColorPickerVisibility() {
@@ -890,66 +1162,45 @@ function updateColorPickerVisibility() {
   }
 }
 
-// Update animation type display
-function updateAnimationType() {
-  // Hide all elements
-  document.querySelectorAll('.animated-element').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.selfie-img').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.pig-svg').forEach(el => el.classList.remove('active'));
-  bounceLine.classList.remove('active');
-
-  // Update which elements to show based on mode and type
-  if (bounceDirection === 'horizontal') {
-    // Show two elements
-    if (animalType === 'circle') {
-      animal1Element = document.getElementById('animal1');
-      animal2Element = document.getElementById('animal2');
-      animal1Element.classList.add('active');
-      animal2Element.classList.add('active');
-      updateCircleColors();
-    } else if (animalType === 'pig') {
-      animal1Element = document.getElementById('pig1');
-      animal2Element = document.getElementById('pig2');
-      animal1Element.classList.add('active');
-      animal2Element.classList.add('active');
-    } else if (animalType === 'selfie') {
-      animal1Element = document.getElementById('selfie1');
-      animal2Element = document.getElementById('selfie2');
-      animal1Element.classList.add('active');
-      animal2Element.classList.add('active');
-      updateSelfieImages();
-    }
-  } else {
-    // Vertical mode - show one element and line
-    bounceLine.classList.add('active');
-    if (animalType === 'circle') {
-      animal1Element = document.getElementById('animal1');
-      animal2Element = null;
-      animal1Element.classList.add('active');
-      updateCircleColors();
-    } else if (animalType === 'pig') {
-      animal1Element = document.getElementById('pig1');
-      animal2Element = null;
-      animal1Element.classList.add('active');
-    } else if (animalType === 'selfie') {
-      animal1Element = document.getElementById('selfie1');
-      animal2Element = null;
-      animal1Element.classList.add('active');
-      updateSelfieImages();
-    }
+// Function to create animals based on selected type
+function createAnimals() {
+  switch(animalType) {
+    case 'circle':
+      animal1 = new Circle(1);
+      animal2 = new Circle(-1);
+      break;
+    case 'pig':
+      animal1 = new Pig(1);
+      animal2 = new Pig(-1);
+      break;
+    case 'selfie':
+      animal1 = new Selfie(1);
+      animal2 = new Selfie(-1);
+      break;
+    default:
+      animal1 = new Circle(1);
+      animal2 = new Circle(-1);
+      break;
   }
-
-  updateColorPickerVisibility();
 }
 
-// ===== INITIALIZATION =====
+// Setup p5.js canvas
+function setup() {
+  // Calculate responsive canvas size
+  const size = getCanvasSize();
+  canvasWidth = size.width;
+  canvasHeight = size.height;
+  canvasScale = size.scale;
 
-function init() {
-  // Get DOM references
-  animationStage = document.getElementById('animation-stage');
-  bounceLine = document.getElementById('bounce-line');
+  var canvas = createCanvas(canvasWidth, canvasHeight);
+  canvas.parent(document.querySelector('.canvas-wrapper'));
+  frameRate(120); // Higher frame rate for smoother animation at fast tempos
+  xpos = canvasWidth / 2 + rad;
 
-  // Initialize camera listeners
+  // Create 2 animal instances
+  createAnimals();
+
+  // Initialize camera listeners for selfie feature
   initCameraListeners();
 
   // Initialize settings modal listeners
@@ -958,47 +1209,89 @@ function init() {
   // Initialize fullscreen listeners
   initFullscreenListeners();
 
-  // Create pig SVG
-  createPigSVG();
-
-  // Animal selector
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
 
+    // Show/hide color picker based on animation type
+    updateColorPickerVisibility();
+
+    // Always open camera when selfie is selected (allows retaking)
     if (animalType === 'selfie') {
       openCamera();
     }
 
-    updateAnimationType();
+    createAnimals(); // Recreate animals when selection changes
   });
 
   // Bounce direction dropdown
   document.querySelector('#bounce-direction').addEventListener('change', e => {
     bounceDirection = e.target.value;
-    updateAnimationType();
   });
 
-  // Tempo marking dropdown
+  // Initial color picker visibility
+  updateColorPickerVisibility();
+
+  // Tempo marking dropdown - sets BPM based on Italian tempo terms
   document.querySelector('#tempo-marking').addEventListener('change', e => {
     const bpm = parseInt(e.target.value);
     if (bpm) {
       Tone.Transport.bpm.value = bpm;
       cachedBPM = bpm;
       secondsPerBeat = 1 / (bpm / 60);
+      // Update the slider display
       const slider = document.querySelector('tone-slider');
       if (slider) {
         slider.setAttribute('value', bpm);
       }
     }
   });
-
-  // Initialize animation type
-  updateAnimationType();
 }
 
-// Start initialization when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
+// Handle window resize for responsive canvas
+function windowResized() {
+  const size = isFullscreen ? getFullscreenCanvasSize() : getCanvasSize();
+  canvasWidth = size.width;
+  canvasHeight = size.height;
+  canvasScale = size.scale;
+  resizeCanvas(canvasWidth, canvasHeight);
+}
+
+
+function draw() {
+  // Flash white at beat (when progress is near 0) if enabled
+  const progress = getAnimationProgress();
+  if (flashEnabled && Tone.Transport.state === 'started' && progress < 0.08) {
+    background('white');
+  } else {
+    background('#696969');
+  }
+
+  // Scale all drawing to fit responsive canvas
+  push();
+  scale(canvasScale);
+
+  if (bounceDirection === 'vertical') {
+    // Vertical mode: one object bouncing against a horizontal line
+    const lineY = 420;
+
+    // Draw the horizontal line
+    stroke(200);
+    strokeWeight(4);
+    line(120, lineY, 520, lineY);
+    noStroke();
+
+    // Position the single animal at center X, vertical Y
+    animal1.x = 320; // Center of 640 width
+    animal1.y = getVerticalY();
+    animal1.display();
+  } else {
+    // Horizontal mode: two objects bouncing toward each other
+    animal1.pigmove();
+    animal2.pigmove();
+
+    animal1.display();
+    animal2.display();
+  }
+
+  pop();
 }
