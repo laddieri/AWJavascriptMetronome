@@ -379,7 +379,7 @@ function actuallyStartRecording() {
         if (recordedSoundPlayer) {
           recordedSoundPlayer.dispose();
         }
-        recordedSoundPlayer = new Tone.Player(recordedSoundURL).toDestination();
+        recordedSoundPlayer = new Tone.Player(recordedSoundURL).toMaster();
 
         recordingStatus.textContent = '✓ Sound recorded & trimmed!';
         recordingStatus.classList.remove('recording');
@@ -583,7 +583,7 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // Create sound players and synthesizers
-var pigPlayer = new Tone.Player("./sounds/oink.wav").toDestination();
+var pigPlayer = new Tone.Player("./sounds/oink.wav").toMaster();
 
 var selfieSynth = new Tone.NoiseSynth({
   noise: { type: "white" },
@@ -593,7 +593,7 @@ var selfieSynth = new Tone.NoiseSynth({
     sustain: 0,
     release: 0.1
   }
-}).toDestination();
+}).toMaster();
 
 var circleSynth = new Tone.Synth({
   oscillator: { type: "sine" },
@@ -603,7 +603,7 @@ var circleSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
+}).toMaster();
 
 var subdivisionSynth = new Tone.Synth({
   oscillator: { type: "triangle" },
@@ -613,7 +613,7 @@ var subdivisionSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
+}).toMaster();
 subdivisionSynth.volume.value = -12;
 
 var accentSynth = new Tone.Synth({
@@ -624,7 +624,7 @@ var accentSynth = new Tone.Synth({
     sustain: 0,
     release: 0.05
   }
-}).toDestination();
+}).toMaster();
 accentSynth.volume.value = 0;
 
 // Trigger sound based on animal type
