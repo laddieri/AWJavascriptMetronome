@@ -26,6 +26,7 @@ var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
 var lastBeatTime = 0; // Track when last beat fired for animation sync
+var animBeat = 0;    // Beat index for conductor animation, updated in Draw callback
 var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
 var isFullscreen = false; // Fullscreen mode state
 
@@ -496,22 +497,22 @@ class Conductor {
     const BY = 320; // beat y-level
     const LY = 285; // last-beat y (slightly above)
     const defined = {
-      1: [[360, BY]],
-      2: [[360, BY], [360, LY]],
-      3: [[360, BY], [460, BY], [360, LY]],
-      4: [[360, BY], [330, BY], [460, BY], [360, LY]],
-      5: [[360, BY], [330, BY], [360, BY], [460, BY], [360, LY]],
-      6: [[360, BY], [335, BY], [350, BY], [460, BY], [445, BY], [360, LY]],
+      1: [[390, BY]],
+      2: [[390, BY], [390, LY]],
+      3: [[390, BY], [490, BY], [390, LY]],
+      4: [[390, BY], [355, BY], [490, BY], [390, LY]],
+      5: [[390, BY], [355, BY], [390, BY], [490, BY], [390, LY]],
+      6: [[390, BY], [355, BY], [370, BY], [490, BY], [470, BY], [390, LY]],
     };
     if (defined[n]) return defined[n];
 
     // Fallback for 7+ beats: alternate inner/outer at BY, last beat at LY
-    const pts = [[360, BY]];
+    const pts = [[390, BY]];
     for (let i = 1; i < n - 1; i++) {
-      const x = i % 2 === 0 ? 460 : 330;
+      const x = i % 2 === 0 ? 490 : 355;
       pts.push([x, BY]);
     }
-    pts.push([360, LY]);
+    pts.push([390, LY]);
     return pts;
   }
 
@@ -533,8 +534,11 @@ class Conductor {
     }
 
     const progress = getAnimationProgress();
-    // The beat that most recently fired (0-indexed)
-    const lastFiredBeatIndex = (currentBeat - 1 + beatsPerMeasure) % beatsPerMeasure;
+    // The beat that most recently fired (0-indexed).
+    // Use animBeat (updated atomically with lastBeatTime in the Draw callback)
+    // rather than currentBeat (incremented early in the audio thread) to avoid
+    // a visible position jump when progress resets to 0 on each beat.
+    const lastFiredBeatIndex = (animBeat - 1 + beatsPerMeasure) % beatsPerMeasure;
 
     const fromIdx = lastFiredBeatIndex % n;
     const toIdx = (fromIdx + 1) % n;
@@ -1185,11 +1189,17 @@ function scheduleMainBeat() {
     // Speak beat number immediately (before Tone.Draw) to compensate for speech synthesis latency
     speakBeatNumber(beatToSpeak);
 
+    // Capture beat index before incrementing so Draw callback can use it
+    const thisBeat = currentBeat;
+
     // Reset animation timer to sync with beat
     Tone.Draw.schedule(function(){
       t = 0;
       // Record when this beat fired for animation sync
       lastBeatTime = Tone.now();
+      // Advance animBeat here so it changes atomically with lastBeatTime,
+      // preventing the conductor hand from jumping when progress resets to 0.
+      animBeat = (thisBeat + 1) % beatsPerMeasure;
       // Update cached BPM only if it changed
       const currentBPM = Tone.Transport.bpm.value;
       if (cachedBPM !== currentBPM) {
@@ -1253,10 +1263,12 @@ function toggleTransport() {
     Tone.Transport.stop();
     currentBeat = 0;
     lastBeatTime = 0;
+    animBeat = 0;
   } else {
     // Starting: reset beat counter and start fresh
     currentBeat = 0;
     lastBeatTime = 0;
+    animBeat = 0;
     Tone.Transport.start();
   }
 }
