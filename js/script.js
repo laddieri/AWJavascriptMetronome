@@ -594,10 +594,12 @@ class Conductor {
       }
     }
 
-    // Draw arm
-    stroke(180, 130, 80);
-    strokeWeight(6);
-    line(shoulderX, shoulderY, this.x, this.y);
+    if (conductorSelfieImage) {
+      // Draw arm
+      stroke(180, 130, 80);
+      strokeWeight(6);
+      line(shoulderX, shoulderY, this.x, this.y);
+    }
 
     // Conductor's right hand (direction === -1, left side of canvas from viewer) holds the baton
     if (this.direction === -1) {
@@ -611,7 +613,6 @@ class Conductor {
         stroke(230, 220, 200);
         strokeWeight(3);
         line(this.x, this.y, batonX, batonY);
-
       }
     }
 
