@@ -34,22 +34,51 @@ var animBeat = 0;    // Beat index for conductor animation, updated in Draw call
 var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
 var isFullscreen = false; // Fullscreen mode state
 
+// Pre-built utterance cache — objects are created once at load time so the
+// browser can pre-parse phonetics and we avoid GC churn on every beat.
+var utteranceCache = {};
+(function() {
+  if (!('speechSynthesis' in window)) return;
+  ['1','2','3','4','5','6','7','8','9','ready','go'].forEach(function(word) {
+    var u = new SpeechSynthesisUtterance(word);
+    u.rate = 1.5;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    utteranceCache[word] = u;
+  });
+})();
+
+// Speak a silent utterance on the first user gesture to initialize the TTS
+// engine ahead of time, eliminating the lag on the first real spoken word.
+var speechWarmupDone = false;
+function warmUpSpeechSynthesis() {
+  if (speechWarmupDone || !('speechSynthesis' in window)) return;
+  speechWarmupDone = true;
+  var warmUp = new SpeechSynthesisUtterance('\u200B'); // zero-width space — inaudible
+  warmUp.volume = 0;
+  window.speechSynthesis.speak(warmUp);
+}
+
 // Voice counting with Web Speech API
 function speakBeatNumber(beatNumber) {
   if (!voiceCountEnabled) return;
   speakWord(String(beatNumber));
 }
 
-// Speak any word unconditionally (used for count-in regardless of voiceCountEnabled)
+// Speak any word unconditionally (used for count-in regardless of voiceCountEnabled).
+// Uses cached utterance objects; falls back to a fresh one for unknown words.
 function speakWord(word) {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word);
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  var utterance = utteranceCache[word];
+  if (!utterance) {
+    utterance = new SpeechSynthesisUtterance(word);
     utterance.rate = 1.5;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
-    window.speechSynthesis.speak(utterance);
+    utteranceCache[word] = utterance;
   }
+  window.speechSynthesis.speak(utterance);
 }
 
 // Canvas dimensions (will be set dynamically)
@@ -1089,6 +1118,8 @@ var audioContextResumed = false;
 
 function resumeAudioContext() {
   if (audioContextResumed && Tone.context.state === 'running') return;
+
+  warmUpSpeechSynthesis(); // initialize TTS engine on first user gesture
 
   if (Tone.context.state !== 'running') {
     Tone.context.resume().then(function() {
