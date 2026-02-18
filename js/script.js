@@ -1325,6 +1325,10 @@ function updateColorPickerVisibility() {
   if (conductorSelfieBtn) {
     conductorSelfieBtn.style.display = (animalType === 'conductor') ? '' : 'none';
   }
+  const directionGroup = document.getElementById('direction-group');
+  if (directionGroup) {
+    directionGroup.style.display = (animalType === 'conductor') ? 'none' : '';
+  }
 }
 
 // Function to create animals based on selected type
