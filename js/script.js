@@ -480,6 +480,112 @@ class Selfie {
   }
 }
 
+class Conductor {
+  constructor(direction) {
+    this.direction = direction; // 1 = right hand, -1 = left hand
+    this.x = direction === 1 ? 450 : 190;
+    this.y = 200;
+    this.handSize = 28;
+  }
+
+  // Waypoints defined for the right hand; left hand is mirrored around x=320
+  getRightHandWaypoints() {
+    const n = beatsPerMeasure;
+    const defined = {
+      1: [[370, 260]],
+      2: [[370, 360], [370, 120]],
+      3: [[370, 360], [460, 250], [370, 120]],
+      4: [[370, 360], [260, 275], [460, 255], [370, 120]],
+      5: [[370, 360], [370, 175], [260, 280], [460, 255], [370, 120]],
+      6: [[370, 360], [400, 310], [260, 280], [460, 255], [390, 165], [370, 120]],
+    };
+    if (defined[n]) return defined[n];
+
+    // Fallback for 7-9 beats: alternate in/out from down to up
+    const pts = [[370, 360]];
+    for (let i = 1; i < n - 1; i++) {
+      const t = i / (n - 1);
+      const y = 360 - t * 240;
+      const xOff = i % 2 === 0 ? -110 : 90;
+      pts.push([370 + xOff, y]);
+    }
+    pts.push([370, 120]);
+    return pts;
+  }
+
+  getWaypoints() {
+    const rightPts = this.getRightHandWaypoints();
+    if (this.direction === 1) return rightPts;
+    // Mirror x around canvas center (320) for left hand
+    return rightPts.map(([x, y]) => [640 - x, y]);
+  }
+
+  getConductorPosition() {
+    const waypoints = this.getWaypoints();
+    const n = waypoints.length;
+    if (n === 0) return [this.x, this.y];
+
+    // When stopped, rest at the UP position (last waypoint)
+    if (Tone.Transport.state !== 'started' || lastBeatTime <= 0) {
+      return [waypoints[n - 1][0], waypoints[n - 1][1]];
+    }
+
+    const progress = getAnimationProgress();
+    // The beat that most recently fired (0-indexed)
+    const lastFiredBeatIndex = (currentBeat - 1 + beatsPerMeasure) % beatsPerMeasure;
+
+    const fromIdx = lastFiredBeatIndex % n;
+    const toIdx = (fromIdx + 1) % n;
+    const [fx, fy] = waypoints[fromIdx];
+    const [tx, ty] = waypoints[toIdx];
+
+    const eased = Easing.easeInOutQuad(progress);
+    return [fx + (tx - fx) * eased, fy + (ty - fy) * eased];
+  }
+
+  pigmove() {
+    const [x, y] = this.getConductorPosition();
+    this.x = x;
+    this.y = y;
+  }
+
+  display() {
+    // Fixed shoulder/wrist anchor at the bottom sides of the canvas
+    const shoulderX = this.direction === 1 ? 540 : 100;
+    const shoulderY = 440;
+
+    // Draw arm
+    stroke(180, 130, 80);
+    strokeWeight(6);
+    line(shoulderX, shoulderY, this.x, this.y);
+
+    // Draw baton extending from hand in the same direction as the arm
+    const armDx = this.x - shoulderX;
+    const armDy = this.y - shoulderY;
+    const armLen = Math.sqrt(armDx * armDx + armDy * armDy);
+    if (armLen > 0) {
+      const batonLen = 60;
+      const batonX = this.x + (armDx / armLen) * batonLen;
+      const batonY = this.y + (armDy / armLen) * batonLen;
+      stroke(230, 220, 200);
+      strokeWeight(3);
+      line(this.x, this.y, batonX, batonY);
+      // Baton tip
+      noStroke();
+      fill(255, 255, 220);
+      ellipse(batonX, batonY, 8, 8);
+    }
+
+    // Draw hand
+    noStroke();
+    fill(255, 210, 170);
+    ellipse(this.x, this.y, this.handSize, this.handSize);
+    // Subtle highlight
+    fill(255, 235, 210, 160);
+    ellipse(this.x - 4, this.y - 5, 10, 10);
+  }
+}
+
 // Camera functions
 function openCamera() {
   const modal = document.getElementById('camera-modal');
@@ -1039,6 +1145,9 @@ function triggerSound(time, isAccent = false){
         selfieSynth.triggerAttackRelease("8n", time);
       }
       break;
+    case 'conductor':
+      circleSynth.triggerAttackRelease("A4", "16n", time);
+      break;
     default:
       if (pigPlayer.state === 'started') {
         pigPlayer.stop(time);
@@ -1177,6 +1286,10 @@ function createAnimals() {
       animal1 = new Selfie(1);
       animal2 = new Selfie(-1);
       break;
+    case 'conductor':
+      animal1 = new Conductor(1);  // right hand
+      animal2 = new Conductor(-1); // left hand
+      break;
     default:
       animal1 = new Circle(1);
       animal2 = new Circle(-1);
@@ -1270,7 +1383,13 @@ function draw() {
   push();
   scale(canvasScale);
 
-  if (bounceDirection === 'vertical') {
+  if (animalType === 'conductor') {
+    // Conductor mode: both hands move in a 2D beat pattern regardless of direction setting
+    animal1.pigmove();
+    animal2.pigmove();
+    animal1.display();
+    animal2.display();
+  } else if (bounceDirection === 'vertical') {
     // Vertical mode: one object bouncing against a horizontal line
     const lineY = 420;
 
