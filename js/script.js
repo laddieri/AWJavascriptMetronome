@@ -568,8 +568,8 @@ class Conductor {
     strokeWeight(6);
     line(shoulderX, shoulderY, this.x, this.y);
 
-    // Only the right hand (direction === 1) holds a baton
-    if (this.direction === 1) {
+    // Conductor's right hand (direction === -1, left side of canvas from viewer) holds the baton
+    if (this.direction === -1) {
       const armDx = this.x - shoulderX;
       const armDy = this.y - shoulderY;
       const armLen = Math.sqrt(armDx * armDx + armDy * armDy);
