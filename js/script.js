@@ -499,22 +499,22 @@ class Conductor {
     const BY = 425; // beat y-level
     const LY = 381; // last-beat y (slightly above)
     const defined = {
-      1: [[505, BY]],
-      2: [[505, BY], [505, LY]],
-      3: [[505, BY], [385, BY], [505, LY]],
-      4: [[505, BY], [385, BY], [530, BY], [505, LY]],
-      5: [[505, BY], [385, BY], [505, BY], [530, BY], [505, LY]],
-      6: [[505, BY], [385, BY], [400, BY], [530, BY], [490, BY], [505, LY]],
+      1: [[475, BY]],
+      2: [[475, BY], [475, LY]],
+      3: [[475, BY], [385, BY], [475, LY]],
+      4: [[475, BY], [385, BY], [530, BY], [475, LY]],
+      5: [[475, BY], [385, BY], [475, BY], [530, BY], [475, LY]],
+      6: [[475, BY], [385, BY], [400, BY], [530, BY], [490, BY], [475, LY]],
     };
     if (defined[n]) return defined[n];
 
     // Fallback for 7+ beats: alternate inner/outer at BY, last beat at LY
-    const pts = [[505, BY]];
+    const pts = [[475, BY]];
     for (let i = 1; i < n - 1; i++) {
       const x = i % 2 === 0 ? 530 : 385;
       pts.push([x, BY]);
     }
-    pts.push([505, LY]);
+    pts.push([475, LY]);
     return pts;
   }
 
@@ -563,7 +563,7 @@ class Conductor {
 
   display() {
     // Fixed shoulder anchor above the hands
-    const shoulderX = this.direction === 1 ? 520 : 120;
+    const shoulderX = this.direction === 1 ? 490 : 150;
     const shoulderY = 194;
 
     // Draw head — rendered once from the direction===1 instance to avoid doubling
