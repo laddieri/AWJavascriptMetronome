@@ -1295,6 +1295,15 @@ function scheduleMainBeat() {
         speakWord("ready");
       } else if (countInBeatsRemaining === 1) {
         speakWord("go");
+        // Trigger the conductor's big upswing so the baton rises on "go"
+        // and can come straight down on beat 1 of the real metronome.
+        // animBeat=0 makes lastFiredBeatIndex = n-1 (last waypoint), which
+        // selects the 140px bounce amplitude used between the final beat and beat 1.
+        Tone.Draw.schedule(function() {
+          t = 0;
+          lastBeatTime = Tone.now();
+          animBeat = 0;
+        }, time);
       } else {
         speakWord(String((beatIndex % beatsPerMeasure) + 1));
       }
