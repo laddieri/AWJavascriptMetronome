@@ -488,7 +488,7 @@ class Conductor {
     this.direction = direction; // 1 = right hand, -1 = left hand
     this.x = direction === 1 ? 450 : 190;
     this.y = 200;
-    this.handSize = 28;
+    this.handSize = 32;
   }
 
   // Waypoints defined for the right hand; left hand is mirrored around x=320.
@@ -591,6 +591,33 @@ class Conductor {
         pop();
 
         drawingContext.restore();
+      } else {
+        // Body silhouette shown before a selfie is taken
+        push();
+        noStroke();
+        fill(0, 0, 0, 60);
+
+        // Head
+        ellipse(headX, headY, headDiam, headDiam);
+
+        // Neck
+        const neckW = 40;
+        const neckTop = headY + headDiam / 2 - 10;
+        rect(headX - neckW / 2, neckTop, neckW, 35);
+
+        // Torso — trapezoid wider at shoulders, narrower at waist/hips
+        const torsoTop = neckTop + 30;
+        const torsoBot = 465;
+        const shoulderW = 200;
+        const waistW = 130;
+        beginShape();
+        vertex(headX - shoulderW / 2, torsoTop);
+        vertex(headX + shoulderW / 2, torsoTop);
+        vertex(headX + waistW / 2, torsoBot);
+        vertex(headX - waistW / 2, torsoBot);
+        endShape(CLOSE);
+
+        pop();
       }
     }
 
