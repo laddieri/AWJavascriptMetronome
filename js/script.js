@@ -546,10 +546,10 @@ class Conductor {
     const [tx, ty] = waypoints[toIdx];
 
     const eased = Easing.easeInOutQuad(progress);
-    // Add a downward bounce between beats so there is vertical motion mid-travel.
-    // sin peaks at 1 when progress=0.5 (midpoint), is 0 at beat moments (0 and 1).
+    // Subtract bounce so hands rise between beats (smaller y = higher on canvas).
+    // sin is 0 at beat moments (progress 0 and 1) and peaks at mid-travel.
     const bounce = Math.sin(progress * Math.PI) * 70;
-    return [fx + (tx - fx) * eased, fy + (ty - fy) * eased + bounce];
+    return [fx + (tx - fx) * eased, fy + (ty - fy) * eased - bounce];
   }
 
   pigmove() {
