@@ -496,8 +496,8 @@ class Conductor {
   // slightly above (LAST_Y). All x values must be >= 320 so hands never cross.
   getRightHandWaypoints() {
     const n = beatsPerMeasure;
-    const BY = 340; // beat y-level
-    const LY = 305; // last-beat y (slightly above)
+    const BY = 425; // beat y-level
+    const LY = 381; // last-beat y (slightly above)
     const defined = {
       1: [[420, BY]],
       2: [[420, BY], [420, LY]],
@@ -564,7 +564,7 @@ class Conductor {
   display() {
     // Fixed shoulder anchor above the hands
     const shoulderX = this.direction === 1 ? 520 : 120;
-    const shoulderY = 155;
+    const shoulderY = 194;
 
     // Draw head — rendered once from the direction===1 instance to avoid doubling
     if (this.direction === 1) {
