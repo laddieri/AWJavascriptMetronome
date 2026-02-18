@@ -547,8 +547,9 @@ class Conductor {
 
     const eased = Easing.easeInOutQuad(progress);
     // Subtract bounce so hands rise between beats (smaller y = higher on canvas).
-    // sin is 0 at beat moments (progress 0 and 1) and peaks at mid-travel.
-    const bounce = Math.sin(progress * Math.PI) * 70;
+    // Double the amplitude after the last beat of the measure.
+    const bounceAmp = fromIdx === n - 1 ? 140 : 70;
+    const bounce = Math.sin(progress * Math.PI) * bounceAmp;
     return [fx + (tx - fx) * eased, fy + (ty - fy) * eased - bounce];
   }
 
