@@ -27,6 +27,8 @@ var animalSoundEnabled = true; // Play animal sound on beat
 var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
+var countInEnabled = false;    // Play a 2-measure count-in before the metronome starts
+var countInBeatsRemaining = 0; // Counts down during the count-in phase
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 var animBeat = 0;    // Beat index for conductor animation, updated in Draw callback
 var bounceDirection = 'horizontal'; // 'horizontal' or 'vertical'
@@ -35,11 +37,15 @@ var isFullscreen = false; // Fullscreen mode state
 // Voice counting with Web Speech API
 function speakBeatNumber(beatNumber) {
   if (!voiceCountEnabled) return;
+  speakWord(String(beatNumber));
+}
+
+// Speak any word unconditionally (used for count-in regardless of voiceCountEnabled)
+function speakWord(word) {
   if ('speechSynthesis' in window) {
-    // Cancel any ongoing speech to prevent overlap
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(String(beatNumber));
-    utterance.rate = 1.5; // Speak faster for quick beats
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.rate = 1.5;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
     window.speechSynthesis.speak(utterance);
@@ -1059,6 +1065,14 @@ function initSettingsListeners() {
     });
   }
 
+  // Count-in toggle
+  const countInCheckbox = document.getElementById('count-in-enabled');
+  if (countInCheckbox) {
+    countInCheckbox.addEventListener('change', (e) => {
+      countInEnabled = e.target.checked;
+    });
+  }
+
   // Circle color picker
   const circleColorPicker = document.getElementById('circle-color');
   if (circleColorPicker) {
@@ -1236,6 +1250,29 @@ var subdivisionEvents = [];
 // Schedule main beat sound
 function scheduleMainBeat() {
   Tone.Transport.scheduleRepeat(function(time) {
+    // ── Count-in phase ──────────────────────────────────────────────────────
+    if (countInBeatsRemaining > 0) {
+      const totalCountIn = 2 * beatsPerMeasure;
+      const beatIndex = totalCountIn - countInBeatsRemaining; // 0-based position in count-in
+      const isCountInAccent = beatIndex % beatsPerMeasure === 0;
+
+      // Simple click for every count-in beat
+      accentSynth.triggerAttackRelease(isCountInAccent ? "G5" : "A4", "16n", time);
+
+      // Voice: "ready" on the second-to-last beat, "go" on the last, numbers otherwise
+      if (countInBeatsRemaining === 2) {
+        speakWord("ready");
+      } else if (countInBeatsRemaining === 1) {
+        speakWord("go");
+      } else {
+        speakWord(String((beatIndex % beatsPerMeasure) + 1));
+      }
+
+      countInBeatsRemaining--;
+      return; // Skip normal beat processing during count-in
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     // Determine if this is beat 1 (accented)
     const isAccent = currentBeat === 0;
     triggerSound(time, isAccent);
@@ -1324,11 +1361,13 @@ function toggleTransport() {
     currentBeat = 0;
     lastBeatTime = 0;
     animBeat = 0;
+    countInBeatsRemaining = 0;
   } else {
     // Starting: reset beat counter and start fresh
     currentBeat = 0;
     lastBeatTime = 0;
     animBeat = 0;
+    countInBeatsRemaining = countInEnabled ? 2 * beatsPerMeasure : 0;
     Tone.Transport.start();
   }
 }
