@@ -611,10 +611,7 @@ class Conductor {
         stroke(230, 220, 200);
         strokeWeight(3);
         line(this.x, this.y, batonX, batonY);
-        // Baton tip
-        noStroke();
-        fill(255, 255, 220);
-        ellipse(batonX, batonY, 8, 8);
+
       }
     }
 
