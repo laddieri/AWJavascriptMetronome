@@ -599,30 +599,30 @@ class Conductor {
       stroke(180, 130, 80);
       strokeWeight(6);
       line(shoulderX, shoulderY, this.x, this.y);
-
-      // Conductor's right hand (direction === -1, left side of canvas from viewer) holds the baton
-      if (this.direction === -1) {
-        const armDx = this.x - shoulderX;
-        const armDy = this.y - shoulderY;
-        const armLen = Math.sqrt(armDx * armDx + armDy * armDy);
-        if (armLen > 0) {
-          const batonLen = 60;
-          const batonX = this.x + (armDx / armLen) * batonLen;
-          const batonY = this.y + (armDy / armLen) * batonLen;
-          stroke(230, 220, 200);
-          strokeWeight(3);
-          line(this.x, this.y, batonX, batonY);
-        }
-      }
-
-      // Draw hand
-      noStroke();
-      fill(255, 210, 170);
-      ellipse(this.x, this.y, this.handSize, this.handSize);
-      // Subtle highlight
-      fill(255, 235, 210, 160);
-      ellipse(this.x - 4, this.y - 5, 10, 10);
     }
+
+    // Conductor's right hand (direction === -1, left side of canvas from viewer) holds the baton
+    if (this.direction === -1) {
+      const armDx = this.x - shoulderX;
+      const armDy = this.y - shoulderY;
+      const armLen = Math.sqrt(armDx * armDx + armDy * armDy);
+      if (armLen > 0) {
+        const batonLen = 60;
+        const batonX = this.x + (armDx / armLen) * batonLen;
+        const batonY = this.y + (armDy / armLen) * batonLen;
+        stroke(230, 220, 200);
+        strokeWeight(3);
+        line(this.x, this.y, batonX, batonY);
+      }
+    }
+
+    // Draw hand
+    noStroke();
+    fill(255, 210, 170);
+    ellipse(this.x, this.y, this.handSize, this.handSize);
+    // Subtle highlight
+    fill(255, 235, 210, 160);
+    ellipse(this.x - 4, this.y - 5, 10, 10);
   }
 }
 
