@@ -497,22 +497,22 @@ class Conductor {
     const BY = 320; // beat y-level
     const LY = 285; // last-beat y (slightly above)
     const defined = {
-      1: [[390, BY]],
-      2: [[390, BY], [390, LY]],
-      3: [[390, BY], [490, BY], [390, LY]],
-      4: [[390, BY], [355, BY], [490, BY], [390, LY]],
-      5: [[390, BY], [355, BY], [390, BY], [490, BY], [390, LY]],
-      6: [[390, BY], [355, BY], [370, BY], [490, BY], [470, BY], [390, LY]],
+      1: [[420, BY]],
+      2: [[420, BY], [420, LY]],
+      3: [[420, BY], [510, BY], [420, LY]],
+      4: [[420, BY], [385, BY], [510, BY], [420, LY]],
+      5: [[420, BY], [385, BY], [420, BY], [510, BY], [420, LY]],
+      6: [[420, BY], [385, BY], [400, BY], [510, BY], [490, BY], [420, LY]],
     };
     if (defined[n]) return defined[n];
 
     // Fallback for 7+ beats: alternate inner/outer at BY, last beat at LY
-    const pts = [[390, BY]];
+    const pts = [[420, BY]];
     for (let i = 1; i < n - 1; i++) {
-      const x = i % 2 === 0 ? 490 : 355;
+      const x = i % 2 === 0 ? 510 : 385;
       pts.push([x, BY]);
     }
-    pts.push([390, LY]);
+    pts.push([420, LY]);
     return pts;
   }
 
