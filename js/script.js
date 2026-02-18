@@ -570,7 +570,7 @@ class Conductor {
     if (this.direction === 1) {
       const headX = 320;
       const headY = 82;
-      const headDiam = 72;
+      const headDiam = 144;
 
       if (conductorSelfieImage) {
         // Purple border ring matching the selfie mode style
