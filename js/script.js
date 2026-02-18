@@ -488,28 +488,30 @@ class Conductor {
     this.handSize = 28;
   }
 
-  // Waypoints defined for the right hand; left hand is mirrored around x=320
+  // Waypoints defined for the right hand; left hand is mirrored around x=320.
+  // All beat positions share the same y (BEAT_Y), except the last beat which is
+  // slightly above (LAST_Y). All x values must be >= 320 so hands never cross.
   getRightHandWaypoints() {
     const n = beatsPerMeasure;
+    const BY = 320; // beat y-level
+    const LY = 285; // last-beat y (slightly above)
     const defined = {
-      1: [[370, 260]],
-      2: [[370, 360], [370, 120]],
-      3: [[370, 360], [460, 250], [370, 120]],
-      4: [[370, 360], [260, 275], [460, 255], [370, 120]],
-      5: [[370, 360], [370, 175], [260, 280], [460, 255], [370, 120]],
-      6: [[370, 360], [400, 310], [260, 280], [460, 255], [390, 165], [370, 120]],
+      1: [[360, BY]],
+      2: [[360, BY], [360, LY]],
+      3: [[360, BY], [460, BY], [360, LY]],
+      4: [[360, BY], [330, BY], [460, BY], [360, LY]],
+      5: [[360, BY], [330, BY], [360, BY], [460, BY], [360, LY]],
+      6: [[360, BY], [335, BY], [350, BY], [460, BY], [445, BY], [360, LY]],
     };
     if (defined[n]) return defined[n];
 
-    // Fallback for 7-9 beats: alternate in/out from down to up
-    const pts = [[370, 360]];
+    // Fallback for 7+ beats: alternate inner/outer at BY, last beat at LY
+    const pts = [[360, BY]];
     for (let i = 1; i < n - 1; i++) {
-      const t = i / (n - 1);
-      const y = 360 - t * 240;
-      const xOff = i % 2 === 0 ? -110 : 90;
-      pts.push([370 + xOff, y]);
+      const x = i % 2 === 0 ? 460 : 330;
+      pts.push([x, BY]);
     }
-    pts.push([370, 120]);
+    pts.push([360, LY]);
     return pts;
   }
 
@@ -540,7 +542,10 @@ class Conductor {
     const [tx, ty] = waypoints[toIdx];
 
     const eased = Easing.easeInOutQuad(progress);
-    return [fx + (tx - fx) * eased, fy + (ty - fy) * eased];
+    // Add a downward bounce between beats so there is vertical motion mid-travel.
+    // sin peaks at 1 when progress=0.5 (midpoint), is 0 at beat moments (0 and 1).
+    const bounce = Math.sin(progress * Math.PI) * 38;
+    return [fx + (tx - fx) * eased, fy + (ty - fy) * eased + bounce];
   }
 
   pigmove() {
@@ -550,9 +555,9 @@ class Conductor {
   }
 
   display() {
-    // Fixed shoulder/wrist anchor at the bottom sides of the canvas
-    const shoulderX = this.direction === 1 ? 540 : 100;
-    const shoulderY = 440;
+    // Fixed shoulder anchor above the hands
+    const shoulderX = this.direction === 1 ? 520 : 120;
+    const shoulderY = 130;
 
     // Draw arm
     stroke(180, 130, 80);
