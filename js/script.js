@@ -591,14 +591,6 @@ class Conductor {
         pop();
 
         drawingContext.restore();
-      } else {
-        // Default flesh-tone head
-        noStroke();
-        fill(255, 210, 170);
-        ellipse(headX, headY, headDiam, headDiam);
-        // Simple hair
-        fill(80, 50, 20);
-        arc(headX, headY, headDiam, headDiam, PI, TWO_PI);
       }
     }
 
