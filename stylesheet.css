@@ -207,6 +207,40 @@ main {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+/* Animation selector row — holds the dropdown + optional conductor selfie button */
+.animation-selector-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.animation-selector-row .control-dropdown {
+  flex: 1;
+  min-width: 0;
+}
+
+.conductor-selfie-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.conductor-selfie-btn:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 /* Color picker */
 .color-picker-main {
   width: 100%;

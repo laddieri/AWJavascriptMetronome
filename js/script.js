@@ -10,6 +10,8 @@ var circleColor = '#000000'; // Color for circle animation
 
 // Selfie capture variables
 var selfieImage = null;
+var conductorSelfieImage = null; // Selfie for the conductor's face (optional)
+var cameraTarget = 'selfie'; // 'selfie' or 'conductor' — controls where capturePhoto() stores the result
 var cameraStream = null;
 var recordedSoundURL = null; // URL for recorded selfie sound
 var recordedSoundPlayer = null; // Tone.js Player for recorded sound
@@ -494,8 +496,8 @@ class Conductor {
   // slightly above (LAST_Y). All x values must be >= 320 so hands never cross.
   getRightHandWaypoints() {
     const n = beatsPerMeasure;
-    const BY = 320; // beat y-level
-    const LY = 285; // last-beat y (slightly above)
+    const BY = 340; // beat y-level
+    const LY = 305; // last-beat y (slightly above)
     const defined = {
       1: [[420, BY]],
       2: [[420, BY], [420, LY]],
@@ -562,7 +564,43 @@ class Conductor {
   display() {
     // Fixed shoulder anchor above the hands
     const shoulderX = this.direction === 1 ? 520 : 120;
-    const shoulderY = 130;
+    const shoulderY = 155;
+
+    // Draw head — rendered once from the direction===1 instance to avoid doubling
+    if (this.direction === 1) {
+      const headX = 320;
+      const headY = 82;
+      const headDiam = 72;
+
+      if (conductorSelfieImage) {
+        // Purple border ring matching the selfie mode style
+        noStroke();
+        fill(102, 126, 234);
+        ellipse(headX, headY, headDiam + 8, headDiam + 8);
+
+        // Circular clip and draw selfie
+        drawingContext.save();
+        drawingContext.beginPath();
+        drawingContext.arc(headX, headY, headDiam / 2, 0, Math.PI * 2);
+        drawingContext.clip();
+
+        push();
+        imageMode(CENTER);
+        noStroke();
+        image(conductorSelfieImage, headX, headY, headDiam, headDiam);
+        pop();
+
+        drawingContext.restore();
+      } else {
+        // Default flesh-tone head
+        noStroke();
+        fill(255, 210, 170);
+        ellipse(headX, headY, headDiam, headDiam);
+        // Simple hair
+        fill(80, 50, 20);
+        arc(headX, headY, headDiam, headDiam, PI, TWO_PI);
+      }
+    }
 
     // Draw arm
     stroke(180, 130, 80);
@@ -656,11 +694,16 @@ function capturePhoto() {
   // Draw the center square of the video
   ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
 
-  // Convert to p5.js image
-  selfieImage = loadImage(captureCanvas.toDataURL('image/png'), () => {
-    // Image loaded, recreate animals to use it
-    createAnimals();
-  });
+  // Convert to p5.js image and route to the right target
+  const dataURL = captureCanvas.toDataURL('image/png');
+  if (cameraTarget === 'conductor') {
+    conductorSelfieImage = loadImage(dataURL);
+  } else {
+    selfieImage = loadImage(dataURL, () => {
+      // Image loaded, recreate animals to use it
+      createAnimals();
+    });
+  }
 
   closeCamera();
 }
@@ -1289,6 +1332,10 @@ function updateColorPickerVisibility() {
   if (colorPickerGroup) {
     colorPickerGroup.style.display = (animalType === 'circle') ? '' : 'none';
   }
+  const conductorSelfieBtn = document.getElementById('conductor-selfie-btn');
+  if (conductorSelfieBtn) {
+    conductorSelfieBtn.style.display = (animalType === 'conductor') ? '' : 'none';
+  }
 }
 
 // Function to create animals based on selected type
@@ -1345,15 +1392,22 @@ function setup() {
   document.querySelector('#animal-selector').addEventListener('change', e => {
     animalType = e.target.value;
 
-    // Show/hide color picker based on animation type
+    // Show/hide color picker and conductor selfie button based on animation type
     updateColorPickerVisibility();
 
     // Always open camera when selfie is selected (allows retaking)
     if (animalType === 'selfie') {
+      cameraTarget = 'selfie';
       openCamera();
     }
 
     createAnimals(); // Recreate animals when selection changes
+  });
+
+  // Conductor selfie button — opens camera to capture a face for the conductor
+  document.getElementById('conductor-selfie-btn').addEventListener('click', () => {
+    cameraTarget = 'conductor';
+    openCamera();
   });
 
   // Bounce direction dropdown
