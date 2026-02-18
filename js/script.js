@@ -562,15 +562,39 @@ class Conductor {
   }
 
   display() {
-    // Fixed shoulder anchor above the hands
-    const shoulderX = this.direction === 1 ? 490 : 150;
-    const shoulderY = 194;
+    // Silhouette geometry — shared with arm anchor so arms connect to the shoulders
+    const headX = 320;
+    const headY = 144;
+    const headDiam = 259;
+    const neckW = 40;
+    const neckTop = headY + headDiam / 2 - 10;
+    const torsoTop = neckTop + 30;
+    const shoulderW = 200;
 
-    // Draw head — rendered once from the direction===1 instance to avoid doubling
+    // Arm originates from the outer shoulder edge of the silhouette torso
+    const shoulderX = this.direction === 1 ? headX + shoulderW / 2 : headX - shoulderW / 2;
+    const shoulderY = torsoTop;
+
+    // Draw silhouette and head — once only from the direction===1 instance
     if (this.direction === 1) {
-      const headX = 320;
-      const headY = 144;
-      const headDiam = 259;
+      // Body silhouette (always shown)
+      push();
+      noStroke();
+      fill(0, 0, 0, 60);
+
+      ellipse(headX, headY, headDiam, headDiam);
+      rect(headX - neckW / 2, neckTop, neckW, 35);
+
+      const torsoBot = 465;
+      const waistW = 130;
+      beginShape();
+      vertex(headX - shoulderW / 2, torsoTop);
+      vertex(headX + shoulderW / 2, torsoTop);
+      vertex(headX + waistW / 2, torsoBot);
+      vertex(headX - waistW / 2, torsoBot);
+      endShape(CLOSE);
+
+      pop();
 
       if (conductorSelfieImage) {
         // Purple border ring matching the selfie mode style
@@ -591,38 +615,11 @@ class Conductor {
         pop();
 
         drawingContext.restore();
-      } else {
-        // Body silhouette shown before a selfie is taken
-        push();
-        noStroke();
-        fill(0, 0, 0, 60);
-
-        // Head
-        ellipse(headX, headY, headDiam, headDiam);
-
-        // Neck
-        const neckW = 40;
-        const neckTop = headY + headDiam / 2 - 10;
-        rect(headX - neckW / 2, neckTop, neckW, 35);
-
-        // Torso — trapezoid wider at shoulders, narrower at waist/hips
-        const torsoTop = neckTop + 30;
-        const torsoBot = 465;
-        const shoulderW = 200;
-        const waistW = 130;
-        beginShape();
-        vertex(headX - shoulderW / 2, torsoTop);
-        vertex(headX + shoulderW / 2, torsoTop);
-        vertex(headX + waistW / 2, torsoBot);
-        vertex(headX - waistW / 2, torsoBot);
-        endShape(CLOSE);
-
-        pop();
       }
     }
 
     if (conductorSelfieImage) {
-      // Draw arm
+      // Draw arm from silhouette shoulder to hand
       stroke(180, 130, 80);
       strokeWeight(6);
       line(shoulderX, shoulderY, this.x, this.y);
