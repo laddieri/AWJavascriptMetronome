@@ -569,8 +569,8 @@ class Conductor {
     // Draw head — rendered once from the direction===1 instance to avoid doubling
     if (this.direction === 1) {
       const headX = 320;
-      const headY = 82;
-      const headDiam = 144;
+      const headY = 144;
+      const headDiam = 288;
 
       if (conductorSelfieImage) {
         // Purple border ring matching the selfie mode style
