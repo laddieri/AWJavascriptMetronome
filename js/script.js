@@ -147,8 +147,9 @@ function getFullscreenCanvasSize() {
   };
 }
 
-// Store reference to main toggle's original parent
+// Store reference to main toggle's original parent and next sibling
 var mainToggleParent = null;
+var mainToggleNextSibling = null;
 
 // Enter fullscreen mode
 function enterFullscreen() {
@@ -167,6 +168,7 @@ function enterFullscreen() {
   // Move play toggle to fullscreen controls
   if (mainToggle && togglePlaceholder) {
     mainToggleParent = mainToggle.parentElement;
+    mainToggleNextSibling = mainToggle.nextSibling;
     togglePlaceholder.appendChild(mainToggle);
   }
 
@@ -202,9 +204,9 @@ function exitFullscreen() {
     normalWrapper.appendChild(canvas);
   }
 
-  // Move play toggle back to main controls
+  // Move play toggle back to main controls in its original position
   if (mainToggle && mainToggleParent) {
-    mainToggleParent.appendChild(mainToggle);
+    mainToggleParent.insertBefore(mainToggle, mainToggleNextSibling);
   }
 
   // Hide overlay
