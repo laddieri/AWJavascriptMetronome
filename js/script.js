@@ -1810,11 +1810,12 @@ function draw() {
 // The 📱 button is hidden until one transport is confirmed ready.
 // ═══════════════════════════════════════════════════════════════════════════
 
-var _remoteMode = null;   // 'ws' | 'peer'
-var _remoteWS   = null;
-var _peer       = null;
-var _peerId     = null;
-var _peerConns  = new Set();
+var _remoteMode  = null;   // 'ws' | 'peer'
+var _remoteWS    = null;
+var _peer        = null;
+var _peerId      = null;
+var _peerConns   = new Set();
+var _serverInfo  = null;   // { ip, port } cached from /api/info; set once in WS mode
 
 function initRemoteControl() {
   var remoteBtn        = document.getElementById('remote-btn');
@@ -1838,6 +1839,10 @@ function initRemoteControl() {
     modeDecided = true;
     _remoteMode = 'ws';
     _attachWSHandlers(ws, remoteBtn);
+    // Cache server info now so QR URL generation never has to wait on a fetch.
+    fetch('/api/info')
+      .then(function (r) { return r.json(); })
+      .then(function (info) { _serverInfo = info; });
     // Also start PeerJS as a backup transport for restricted networks (e.g. school
     // WiFi that blocks port 9090 or uses AP isolation). The peer QR code will be
     // shown alongside the local-network QR code in the remote modal.
@@ -1921,7 +1926,9 @@ function initPeerMode(remoteBtn) {
     if (dualSection && !dualSection.classList.contains('hidden')) {
       var peerQrEl  = document.getElementById('qr-code-peer');
       var peerUrlEl = document.getElementById('remote-url-peer');
-      var pUrl = location.origin + '/remote.html?p=' + id;
+      var pUrl = _serverInfo
+        ? 'http://' + _serverInfo.ip + ':' + _serverInfo.port + '/remote.html?p=' + id
+        : location.origin + '/remote.html?p=' + id;
       if (peerQrEl)  _renderQR(peerQrEl, pUrl);
       if (peerUrlEl) peerUrlEl.textContent = pUrl;
     }
@@ -1986,23 +1993,28 @@ function showQRModal() {
     var peerQrEl  = document.getElementById('qr-code-peer');
     var peerUrlEl = document.getElementById('remote-url-peer');
 
-    fetch('/api/info')
-      .then(function (r) { return r.json(); })
-      .then(function (info) {
-        var wsUrl = 'http://' + info.ip + ':' + info.port + '/remote.html';
-        if (wsQrEl)  _renderQR(wsQrEl, wsUrl);
-        if (wsUrlEl) wsUrlEl.textContent = wsUrl;
-      })
-      .catch(function () {
-        if (wsUrlEl) wsUrlEl.textContent = 'Could not reach server \u2014 is node server.js running?';
-      });
+    function renderDualQRs(info) {
+      var wsUrl = 'http://' + info.ip + ':' + info.port + '/remote.html';
+      if (wsQrEl)  _renderQR(wsQrEl, wsUrl);
+      if (wsUrlEl) wsUrlEl.textContent = wsUrl;
+      if (_peerId) {
+        var pUrl = 'http://' + info.ip + ':' + info.port + '/remote.html?p=' + _peerId;
+        if (peerQrEl)  _renderQR(peerQrEl, pUrl);
+        if (peerUrlEl) peerUrlEl.textContent = pUrl;
+      } else {
+        if (peerUrlEl) peerUrlEl.textContent = 'Connecting\u2026 please reopen this dialog in a moment.';
+      }
+    }
 
-    if (_peerId) {
-      var pUrl = location.origin + '/remote.html?p=' + _peerId;
-      if (peerQrEl)  _renderQR(peerQrEl, pUrl);
-      if (peerUrlEl) peerUrlEl.textContent = pUrl;
+    if (_serverInfo) {
+      renderDualQRs(_serverInfo);
     } else {
-      if (peerUrlEl) peerUrlEl.textContent = 'Connecting\u2026 please reopen this dialog in a moment.';
+      fetch('/api/info')
+        .then(function (r) { return r.json(); })
+        .then(renderDualQRs)
+        .catch(function () {
+          if (wsUrlEl) wsUrlEl.textContent = 'Could not reach server \u2014 is node server.js running?';
+        });
     }
   }
 }
