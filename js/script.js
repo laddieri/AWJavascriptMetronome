@@ -1838,6 +1838,10 @@ function initRemoteControl() {
     modeDecided = true;
     _remoteMode = 'ws';
     _attachWSHandlers(ws, remoteBtn);
+    // Also start PeerJS as a backup transport for restricted networks (e.g. school
+    // WiFi that blocks port 9090 or uses AP isolation). The peer QR code will be
+    // shown alongside the local-network QR code in the remote modal.
+    initPeerMode(null);
   }
 
   // Opened in an IIFE so the inner tryWS can tail-call itself for reconnects
@@ -1928,43 +1932,66 @@ function initPeerMode(remoteBtn) {
 
 // ── QR code modal ────────────────────────────────────────────────────────────
 function showQRModal() {
-  var remoteModal = document.getElementById('remote-modal');
-  var qrContainer = document.getElementById('qr-code');
-  var urlEl       = document.getElementById('remote-url');
-  var hintEl      = document.getElementById('remote-modal-hint');
-  if (!remoteModal || !qrContainer) return;
+  var remoteModal     = document.getElementById('remote-modal');
+  var singleSection   = document.getElementById('remote-single-section');
+  var dualSection     = document.getElementById('remote-dual-section');
+  if (!remoteModal) return;
 
   remoteModal.classList.remove('hidden');
 
-  function renderQR(url) {
-    qrContainer.innerHTML = '';
+  function renderQR(container, url) {
+    container.innerHTML = '';
     if (typeof QRCode !== 'undefined') {
-      new QRCode(qrContainer, {
-        text: url, width: 220, height: 220,
+      new QRCode(container, {
+        text: url, width: 200, height: 200,
         colorDark: '#000000', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M,
       });
     }
-    if (urlEl) urlEl.textContent = url;
   }
 
   if (_remoteMode === 'peer') {
+    // Pure PeerJS mode (GitHub Pages / static host) — single QR
+    var qrContainer = document.getElementById('qr-code');
+    var urlEl       = document.getElementById('remote-url');
+    var hintEl      = document.getElementById('remote-modal-hint');
+    if (singleSection) singleSection.classList.remove('hidden');
+    if (dualSection)   dualSection.classList.add('hidden');
     if (hintEl) hintEl.textContent = 'Scan on your phone. Works on any network.';
     if (_peerId) {
-      renderQR(location.origin + '/remote.html?p=' + _peerId);
+      var peerUrl = location.origin + '/remote.html?p=' + _peerId;
+      if (qrContainer) renderQR(qrContainer, peerUrl);
+      if (urlEl) urlEl.textContent = peerUrl;
     } else {
       if (urlEl) urlEl.textContent = 'Connecting to PeerJS\u2026 please wait a moment.';
     }
   } else if (_remoteMode === 'ws') {
-    if (hintEl) hintEl.textContent = 'Make sure your phone is on the same Wi-Fi network, then scan.';
+    // WS mode — show two QR codes: local-network (WS) + any-network (PeerJS backup)
+    if (singleSection) singleSection.classList.add('hidden');
+    if (dualSection)   dualSection.classList.remove('hidden');
+    var wsQrEl    = document.getElementById('qr-code-ws');
+    var wsUrlEl   = document.getElementById('remote-url-ws');
+    var peerQrEl  = document.getElementById('qr-code-peer');
+    var peerUrlEl = document.getElementById('remote-url-peer');
+
     fetch('/api/info')
       .then(function (r) { return r.json(); })
       .then(function (info) {
-        renderQR('http://' + info.ip + ':' + info.port + '/remote.html');
+        var wsUrl = 'http://' + info.ip + ':' + info.port + '/remote.html';
+        if (wsQrEl)  renderQR(wsQrEl, wsUrl);
+        if (wsUrlEl) wsUrlEl.textContent = wsUrl;
       })
       .catch(function () {
-        if (urlEl) urlEl.textContent = 'Could not reach server \u2014 is node server.js running?';
+        if (wsUrlEl) wsUrlEl.textContent = 'Could not reach server \u2014 is node server.js running?';
       });
+
+    if (_peerId) {
+      var pUrl = location.origin + '/remote.html?p=' + _peerId;
+      if (peerQrEl)  renderQR(peerQrEl, pUrl);
+      if (peerUrlEl) peerUrlEl.textContent = pUrl;
+    } else {
+      if (peerUrlEl) peerUrlEl.textContent = 'Connecting\u2026 please reopen this dialog in a moment.';
+    }
   }
 }
 
@@ -1983,11 +2010,12 @@ function sendStateUpdate() {
   };
   if (_remoteMode === 'ws' && _remoteWS && _remoteWS.readyState === WebSocket.OPEN) {
     _remoteWS.send(JSON.stringify(state));
-  } else if (_remoteMode === 'peer') {
-    _peerConns.forEach(function (conn) {
-      if (conn.open) conn.send(state);
-    });
   }
+  // Send to any active PeerJS connections regardless of primary transport mode.
+  // In WS mode, PeerJS runs as a backup for restricted networks (e.g. school WiFi).
+  _peerConns.forEach(function (conn) {
+    if (conn.open) conn.send(state);
+  });
 }
 
 // ── Command handler (shared by both transports) ───────────────────────────────
