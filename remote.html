@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Metronome Remote</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #111827;
+      color: #f0f0f0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      padding: 32px 24px;
+      touch-action: manipulation;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    /* ── Status pill ──────────────────────────────────────────────────────── */
+    #status {
+      font-size: 0.8rem;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    #status.connected    { background: #064e3b; color: #6ee7b7; }
+    #status.disconnected { background: #450a0a; color: #fca5a5; }
+
+    /* ── Play / Stop button ───────────────────────────────────────────────── */
+    #play-btn {
+      width: 168px;
+      height: 168px;
+      border-radius: 50%;
+      border: none;
+      font-size: 4rem;
+      line-height: 1;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 40px rgba(37, 99, 235, 0.45);
+      transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #play-btn:active { transform: scale(0.91); }
+    #play-btn.playing {
+      background: #dc2626;
+      box-shadow: 0 0 40px rgba(220, 38, 38, 0.45);
+    }
+
+    /* ── BPM section ──────────────────────────────────────────────────────── */
+    .bpm-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .bpm-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    #bpm-display {
+      font-size: 5rem;
+      font-weight: 800;
+      line-height: 1;
+      min-width: 5rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bpm-controls {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .bpm-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid #374151;
+      background: #1f2937;
+      color: #e5e7eb;
+      font-size: 2.4rem;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bpm-btn:active { background: #374151; transform: scale(0.88); }
+
+    #bpm-slider {
+      width: 100%;
+      height: 6px;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    .hint {
+      font-size: 0.72rem;
+      color: #4b5563;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Metronome Remote</h1>
+  <div id="status" class="disconnected">Connecting&hellip;</div>
+
+  <button id="play-btn" aria-label="Play / Stop">&#9654;</button>
+
+  <div class="bpm-section">
+    <div class="bpm-label">Tempo (BPM)</div>
+    <div id="bpm-display">--</div>
+    <div class="bpm-controls">
+      <button class="bpm-btn" id="bpm-minus" aria-label="Decrease BPM">&#8722;</button>
+      <button class="bpm-btn" id="bpm-plus"  aria-label="Increase BPM">+</button>
+    </div>
+    <input type="range" id="bpm-slider" min="60" max="240" value="60" aria-label="BPM slider">
+    <p class="hint">Hold +/&minus; to change quickly</p>
+  </div>
+
+  <!-- PeerJS loaded for the GitHub Pages / static-host path -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script>
+    // ── Mode detection ───────────────────────────────────────────────────────
+    // ?p=<peerID>  → PeerJS (WebRTC) — used from GitHub Pages or any static host
+    // (no param)   → WebSocket relay — used when node server.js is running locally
+    var PARAMS      = new URLSearchParams(location.search);
+    var MODE        = PARAMS.has('p') ? 'peer' : 'ws';
+    var PEER_TARGET = PARAMS.get('p');
+
+    // ── UI state ─────────────────────────────────────────────────────────────
+    var isPlaying    = false;
+    var currentBPM   = 60;
+    var sliderDragging = false;
+
+    var statusEl  = document.getElementById('status');
+    var playBtn   = document.getElementById('play-btn');
+    var bpmDisp   = document.getElementById('bpm-display');
+    var bpmSlider = document.getElementById('bpm-slider');
+
+    function updateUI() {
+      playBtn.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
+      playBtn.classList.toggle('playing', isPlaying);
+      bpmDisp.textContent = Math.round(currentBPM);
+      if (!sliderDragging) bpmSlider.value = currentBPM;
+    }
+
+    function onStateUpdate(msg) {
+      isPlaying  = msg.playing;
+      currentBPM = msg.bpm;
+      updateUI();
+    }
+
+    // ── Unified send ─────────────────────────────────────────────────────────
+    var _ws       = null;
+    var _peerConn = null;
+
+    function send(msg) {
+      if (MODE === 'ws') {
+        if (_ws && _ws.readyState === WebSocket.OPEN) _ws.send(JSON.stringify(msg));
+      } else {
+        if (_peerConn && _peerConn.open) _peerConn.send(msg);
+      }
+    }
+
+    // ── WebSocket transport ───────────────────────────────────────────────────
+    function connectWS() {
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      _ws = new WebSocket(proto + '//' + location.host);
+
+      _ws.onopen = function () {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'connected';
+        send({ type: 'requestState' });
+      };
+
+      _ws.onclose = function () {
+        statusEl.textContent = 'Reconnecting\u2026';
+        statusEl.className = 'disconnected';
+        setTimeout(connectWS, 2000);
+      };
+
+      _ws.onerror = function () { _ws.close(); };
+
+      _ws.onmessage = function (evt) {
+        try {
+          var msg = JSON.parse(evt.data);
+          if (msg.type === 'stateUpdate') onStateUpdate(msg);
+        } catch (e) {}
+      };
+    }
+
+    // ── PeerJS transport ──────────────────────────────────────────────────────
+    var _myPeer = null;
+
+    function connectPeer() {
+      // Reuse existing peer if it's still alive; only create a new one if needed
+      if (_myPeer && !_myPeer.destroyed) {
+        doConnect();
+        return;
+      }
+      _myPeer = new Peer();
+      _myPeer.on('open', doConnect);
+      _myPeer.on('error', function (err) {
+        console.warn('Peer error:', err.type);
+        if (_myPeer.destroyed) setTimeout(connectPeer, 3000);
+      });
+    }
+
+    function doConnect() {
+      statusEl.textContent = 'Connecting\u2026';
+      statusEl.className = 'disconnected';
+
+      var conn = _myPeer.connect(PEER_TARGET, { reliable: true });
+      _peerConn = conn;
+
+      conn.on('open', function () {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'connected';
+        send({ type: 'requestState' });
+      });
+
+      conn.on('data', function (data) {
+        try {
+          var msg = (typeof data === 'string') ? JSON.parse(data) : data;
+          if (msg.type === 'stateUpdate') onStateUpdate(msg);
+        } catch (e) {}
+      });
+
+      conn.on('close', function () {
+        _peerConn = null;
+        statusEl.textContent = 'Reconnecting\u2026';
+        statusEl.className = 'disconnected';
+        setTimeout(doConnect, 2000);
+      });
+
+      conn.on('error', function () {
+        _peerConn = null;
+        setTimeout(doConnect, 2000);
+      });
+    }
+
+    // ── Controls ──────────────────────────────────────────────────────────────
+    playBtn.addEventListener('click', function () {
+      send({ type: isPlaying ? 'stop' : 'play' });
+    });
+
+    bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });
+    bpmSlider.addEventListener('touchstart', function () { sliderDragging = true; }, { passive: true });
+    bpmSlider.addEventListener('input', function () {
+      bpmDisp.textContent = this.value;
+    });
+    bpmSlider.addEventListener('change', function () {
+      sliderDragging = false;
+      send({ type: 'setBPM', bpm: parseInt(this.value, 10) });
+    });
+
+    // +/- buttons with hold-to-repeat
+    function changeBPM(delta) {
+      var next = Math.max(60, Math.min(240, currentBPM + delta));
+      if (next !== currentBPM) send({ type: 'setBPM', bpm: next });
+    }
+
+    function setupHoldButton(el, delta) {
+      var interval = null, delay = null;
+      function start() {
+        changeBPM(delta);
+        delay = setTimeout(function () {
+          interval = setInterval(function () { changeBPM(delta); }, 80);
+        }, 400);
+      }
+      function stop() { clearTimeout(delay); clearInterval(interval); delay = interval = null; }
+      el.addEventListener('mousedown',   start);
+      el.addEventListener('touchstart',  start, { passive: true });
+      el.addEventListener('mouseup',     stop);
+      el.addEventListener('mouseleave',  stop);
+      el.addEventListener('touchend',    stop);
+      el.addEventListener('touchcancel', stop);
+      el.addEventListener('click', function (e) { e.preventDefault(); });
+    }
+
+    setupHoldButton(document.getElementById('bpm-minus'), -1);
+    setupHoldButton(document.getElementById('bpm-plus'),  +1);
+
+    // ── Start ─────────────────────────────────────────────────────────────────
+    if (MODE === 'ws') {
+      connectWS();
+    } else {
+      connectPeer();
+    }
+  </script>
+</body>
+</html>
