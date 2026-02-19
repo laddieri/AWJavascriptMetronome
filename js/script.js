@@ -27,7 +27,6 @@ var animalSoundEnabled = true; // Play animal sound on beat
 var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
-var countInEnabled = false;    // Play a 2-measure count-in before the metronome starts
 var countInBeatsRemaining = 0; // Counts down during the count-in phase
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 var animBeat = 0;    // Beat index for conductor animation, updated in Draw callback
@@ -1094,13 +1093,6 @@ function initSettingsListeners() {
     });
   }
 
-  // Count-in toggle
-  const countInCheckbox = document.getElementById('count-in-enabled');
-  if (countInCheckbox) {
-    countInCheckbox.addEventListener('change', (e) => {
-      countInEnabled = e.target.checked;
-    });
-  }
 
   // Circle color picker
   const circleColorPicker = document.getElementById('circle-color');
@@ -1389,18 +1381,28 @@ scheduleMainBeat();
 
 
 //start/stop the transport
-document.querySelector('tone-play-toggle').addEventListener('change', e => {
-  // Ensure AudioContext is running before starting playback
-  if (Tone.context.state !== 'running') {
-    Tone.context.resume().then(function() {
-      toggleTransport();
-    });
-  } else {
-    toggleTransport();
-  }
-})
+const _playToggleEl = document.querySelector('tone-play-toggle');
+const _countInBtn   = document.getElementById('count-in-play-btn');
 
-function toggleTransport() {
+function _ensureAudioContext(fn) {
+  if (Tone.context.state !== 'running') {
+    Tone.context.resume().then(fn);
+  } else {
+    fn();
+  }
+}
+
+// Normal play button: start without count-in
+_playToggleEl.addEventListener('change', () => {
+  _ensureAudioContext(() => toggleTransport(false));
+});
+
+// +2 button: start with 2-measure count-in
+_countInBtn.addEventListener('click', () => {
+  _ensureAudioContext(() => toggleTransport(true));
+});
+
+function toggleTransport(withCountIn) {
   if (Tone.Transport.state === 'started') {
     // Stopping: reset state for clean restart
     Tone.Transport.stop();
@@ -1408,13 +1410,19 @@ function toggleTransport() {
     lastBeatTime = 0;
     animBeat = 0;
     countInBeatsRemaining = 0;
+    _countInBtn.classList.remove('active');
+    _playToggleEl.checked = false;
   } else {
     // Starting: reset beat counter and start fresh
     currentBeat = 0;
     lastBeatTime = 0;
     animBeat = 0;
-    countInBeatsRemaining = countInEnabled ? 2 * beatsPerMeasure : 0;
+    countInBeatsRemaining = withCountIn ? 2 * beatsPerMeasure : 0;
     Tone.Transport.start();
+    if (withCountIn) {
+      _countInBtn.classList.add('active');
+      _playToggleEl.checked = true;
+    }
   }
 }
 
