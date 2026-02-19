@@ -1822,6 +1822,7 @@ function initPeerMode(remoteBtn) {
   _peer.on('connection', function (conn) {
     conn.on('open', function () {
       _peerConns.add(conn);
+      _closeRemoteModal();
       // Push current state to the newly connected phone immediately
       if (conn.open) conn.send({
         type: 'stateUpdate',
@@ -1886,6 +1887,12 @@ function showQRModal() {
   }
 }
 
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function _closeRemoteModal() {
+  var el = document.getElementById('remote-modal');
+  if (el) el.classList.add('hidden');
+}
+
 // ── State broadcast ───────────────────────────────────────────────────────────
 function sendStateUpdate() {
   var state = {
@@ -1904,6 +1911,9 @@ function sendStateUpdate() {
 
 // ── Command handler (shared by both transports) ───────────────────────────────
 function applyRemoteCommand(msg) {
+  // Any message from the phone means it's connected — dismiss the QR modal
+  _closeRemoteModal();
+
   switch (msg.type) {
     case 'play':
       if (Tone.Transport.state !== 'started') {
