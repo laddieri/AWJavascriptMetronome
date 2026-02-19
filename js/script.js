@@ -1524,9 +1524,12 @@ function toggleTransport(withCountIn) {
     animBeat = 0;
     countInBeatsRemaining = withCountIn ? 2 * beatsPerMeasure : 0;
     Tone.Transport.start();
+    // Always sync the play-toggle visual — needed when called from remote
+    // (clicking tone-play-toggle directly already updates it before firing 'change',
+    // so setting .playing = true again is a safe no-op in that path).
+    _setPlayTogglePlaying(true);
     if (withCountIn) {
       _countInBtn.classList.add('active');
-      _setPlayTogglePlaying(true);
     }
   }
   sendStateUpdate();

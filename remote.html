@@ -85,9 +85,10 @@
     }
     #count-in-btn .ci-play  { font-size: 1.8rem; line-height: 1; }
     #count-in-btn .ci-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
-    #count-in-btn.disabled {
-      opacity: 0.35;
-      pointer-events: none;
+    #count-in-btn.playing {
+      font-size: 3.2rem;
+      background: #dc2626;
+      box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
     }
 
     /* ── BPM section ──────────────────────────────────────────────────────── */
@@ -162,7 +163,7 @@
 
   <div class="play-group">
     <button id="play-btn"     class="play-circle" aria-label="Play / Stop">&#9654;</button>
-    <button id="count-in-btn" class="play-circle disabled" aria-label="Play with 2-bar count-in">
+    <button id="count-in-btn" class="play-circle" aria-label="Play with 2-bar count-in">
       <span class="ci-play">&#9654;</span>
       <span class="ci-label">+2 bars</span>
     </button>
@@ -204,8 +205,14 @@
       playBtn.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
       playBtn.classList.toggle('playing', isPlaying);
 
-      // Count-in button: only usable when stopped
-      countInBtn.classList.toggle('disabled', isPlaying);
+      // While playing both buttons act as stop (both turn red)
+      if (isPlaying) {
+        countInBtn.innerHTML = '&#9646;&#9646;';
+        countInBtn.classList.add('playing');
+      } else {
+        countInBtn.innerHTML = '<span class="ci-play">&#9654;</span><span class="ci-label">+2 bars</span>';
+        countInBtn.classList.remove('playing');
+      }
 
       bpmDisp.textContent = Math.round(currentBPM);
       if (!sliderDragging) bpmSlider.value = currentBPM;
@@ -312,8 +319,7 @@
     });
 
     countInBtn.addEventListener('click', function () {
-      // Guard is also enforced by .disabled / pointer-events:none in CSS
-      if (!isPlaying) send({ type: 'playWithCountIn' });
+      send({ type: isPlaying ? 'stop' : 'playWithCountIn' });
     });
 
     bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });
