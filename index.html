@@ -25,7 +25,10 @@
         <div class="controls">
           <!-- Primary Controls: Play and Tempo -->
           <div class="controls-primary">
-            <tone-play-toggle class='toggle'></tone-play-toggle>
+            <div class="play-button-group">
+              <tone-play-toggle class='toggle'></tone-play-toggle>
+              <button id="count-in-play-btn" class="toggle" title="Start with 2-measure count-in">+2</button>
+            </div>
 
             <div class="tempo-controls">
               <label class="control-label">Tempo</label>
@@ -147,14 +150,6 @@
             <input type="checkbox" id="voice-count-enabled">
             Count beats aloud
           </label>
-        </div>
-
-        <div class="setting-group">
-          <label class="setting-label">
-            <input type="checkbox" id="count-in-enabled">
-            Count-in (2 measures)
-          </label>
-          <p class="setting-hint">Clicks + counts aloud, ends with "ready, go"</p>
         </div>
 
         <div class="settings-buttons">
