@@ -40,26 +40,54 @@
     #status.connected    { background: #064e3b; color: #6ee7b7; }
     #status.disconnected { background: #450a0a; color: #fca5a5; }
 
-    /* ── Play / Stop button ───────────────────────────────────────────────── */
-    #play-btn {
-      width: 168px;
-      height: 168px;
+    /* ── Play button group ────────────────────────────────────────────────── */
+    .play-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .play-circle {
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       border: none;
-      font-size: 4rem;
       line-height: 1;
       cursor: pointer;
-      background: #2563eb;
       color: #fff;
-      box-shadow: 0 0 40px rgba(37, 99, 235, 0.45);
-      transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #play-btn:active { transform: scale(0.91); }
+    .play-circle:active { transform: scale(0.91); }
+
+    /* Normal play/stop */
+    #play-btn {
+      font-size: 3.2rem;
+      background: #2563eb;
+      box-shadow: 0 0 36px rgba(37, 99, 235, 0.45);
+    }
     #play-btn.playing {
       background: #dc2626;
-      box-shadow: 0 0 40px rgba(220, 38, 38, 0.45);
+      box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
+    }
+
+    /* Count-in "+2" */
+    #count-in-btn {
+      flex-direction: column;
+      gap: 2px;
+      background: #065f46;
+      box-shadow: 0 0 36px rgba(6, 95, 70, 0.4);
+    }
+    #count-in-btn .ci-play  { font-size: 1.8rem; line-height: 1; }
+    #count-in-btn .ci-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
+    #count-in-btn.disabled {
+      opacity: 0.35;
+      pointer-events: none;
     }
 
     /* ── BPM section ──────────────────────────────────────────────────────── */
@@ -132,7 +160,13 @@
   <h1>Metronome Remote</h1>
   <div id="status" class="disconnected">Connecting&hellip;</div>
 
-  <button id="play-btn" aria-label="Play / Stop">&#9654;</button>
+  <div class="play-group">
+    <button id="play-btn"     class="play-circle" aria-label="Play / Stop">&#9654;</button>
+    <button id="count-in-btn" class="play-circle disabled" aria-label="Play with 2-bar count-in">
+      <span class="ci-play">&#9654;</span>
+      <span class="ci-label">+2 bars</span>
+    </button>
+  </div>
 
   <div class="bpm-section">
     <div class="bpm-label">Tempo (BPM)</div>
@@ -160,14 +194,19 @@
     var currentBPM   = 60;
     var sliderDragging = false;
 
-    var statusEl  = document.getElementById('status');
-    var playBtn   = document.getElementById('play-btn');
-    var bpmDisp   = document.getElementById('bpm-display');
-    var bpmSlider = document.getElementById('bpm-slider');
+    var statusEl    = document.getElementById('status');
+    var playBtn     = document.getElementById('play-btn');
+    var countInBtn  = document.getElementById('count-in-btn');
+    var bpmDisp     = document.getElementById('bpm-display');
+    var bpmSlider   = document.getElementById('bpm-slider');
 
     function updateUI() {
       playBtn.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
       playBtn.classList.toggle('playing', isPlaying);
+
+      // Count-in button: only usable when stopped
+      countInBtn.classList.toggle('disabled', isPlaying);
+
       bpmDisp.textContent = Math.round(currentBPM);
       if (!sliderDragging) bpmSlider.value = currentBPM;
     }
@@ -270,6 +309,11 @@
     // ── Controls ──────────────────────────────────────────────────────────────
     playBtn.addEventListener('click', function () {
       send({ type: isPlaying ? 'stop' : 'play' });
+    });
+
+    countInBtn.addEventListener('click', function () {
+      // Guard is also enforced by .disabled / pointer-events:none in CSS
+      if (!isPlaying) send({ type: 'playWithCountIn' });
     });
 
     bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });

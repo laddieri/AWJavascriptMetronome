@@ -1921,6 +1921,12 @@ function applyRemoteCommand(msg) {
       }
       break;
 
+    case 'playWithCountIn':
+      if (Tone.Transport.state !== 'started') {
+        _ensureAudioContext(function () { toggleTransport(true); });
+      }
+      break;
+
     case 'stop':
       if (Tone.Transport.state === 'started') {
         toggleTransport(false);
