@@ -104,7 +104,8 @@ main {
   border-bottom: 1px solid #e2e8f0;
 }
 
-.controls-primary tone-play-toggle {
+.controls-primary tone-play-toggle,
+.controls-primary #count-in-play-btn {
   transform: scale(1.4);
   flex-shrink: 0;
 }
@@ -312,33 +313,31 @@ tone-play-toggle {
 
 .play-button-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 5px;
+  gap: 24px;
   margin: 0 8px;
   flex-shrink: 0;
   align-self: center;
 }
 
 #count-in-play-btn {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.5px;
   background: #667eea;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 0;
-  width: 44px;
-  height: 20px;
+  width: 54px;
+  height: 44px;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.15s ease, filter 0.15s ease;
   flex-shrink: 0;
 }
 
 #count-in-play-btn:hover {
-  background: #5a6fd6;
-  transform: scale(1.05);
+  filter: brightness(1.12);
 }
 
 #count-in-play-btn.active {
@@ -471,7 +470,8 @@ footer p {
     gap: 16px;
   }
 
-  .controls-primary tone-play-toggle {
+  .controls-primary tone-play-toggle,
+  .controls-primary #count-in-play-btn {
     transform: scale(1.2);
   }
 
@@ -552,7 +552,8 @@ footer p {
     padding-bottom: 10px;
   }
 
-  .controls-primary tone-play-toggle {
+  .controls-primary tone-play-toggle,
+  .controls-primary #count-in-play-btn {
     transform: scale(1.2);
   }
 
@@ -641,7 +642,8 @@ footer p {
     padding-bottom: 8px;
   }
 
-  .controls-primary tone-play-toggle {
+  .controls-primary tone-play-toggle,
+  .controls-primary #count-in-play-btn {
     transform: scale(1.1);
   }
 
