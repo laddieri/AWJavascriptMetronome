@@ -48,6 +48,11 @@ var utteranceCache = {};
   });
 })();
 
+// Adaptive speech scheduling — measures real speech-engine latency and
+// pre-fires speak() calls so the audio lands on the beat, not after it.
+var estimatedSpeechLatency = 0.15; // seconds; refined at runtime via onstart
+var pendingSpeechTimer = null;     // setTimeout id for the next scheduled speak
+
 // Speak a silent utterance on the first user gesture to initialize the TTS
 // engine ahead of time, eliminating the lag on the first real spoken word.
 var speechWarmupDone = false;
@@ -60,25 +65,96 @@ function warmUpSpeechSynthesis() {
 }
 
 // Voice counting with Web Speech API
-function speakBeatNumber(beatNumber) {
+// At fast tempos (>200 BPM) only beat 1 is spoken to avoid garbled rapid-fire speech.
+function speakBeatNumber(beatNumber, audioTime) {
   if (!voiceCountEnabled) return;
-  speakWord(String(beatNumber));
+  var bpm = cachedBPM || 96;
+  if (bpm > 200 && beatNumber !== 1) return;
+  scheduleSpeech(String(beatNumber), audioTime);
 }
 
 // Speak any word unconditionally (used for count-in regardless of voiceCountEnabled).
 // Uses cached utterance objects; falls back to a fresh one for unknown words.
-function speakWord(word) {
+// When audioTime is provided, the call is pre-scheduled so the audio lands on the beat.
+function speakWord(word, audioTime) {
+  if (audioTime !== undefined) {
+    scheduleSpeech(word, audioTime);
+  } else {
+    fireSpeech(word);
+  }
+}
+
+// Return a speech rate scaled to the current tempo so utterances are snappier
+// at fast tempos and more natural at slow ones.
+function getSpeechRate() {
+  var bpm = cachedBPM || 96;
+  // 1.5× at ≤80 BPM, linearly up to 2.5× at 240 BPM
+  return Math.min(2.5, Math.max(1.5, 1.5 + (bpm - 80) / (240 - 80)));
+}
+
+// Low-level: cancel any in-flight speech, update the rate, and speak immediately.
+function fireSpeech(word) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   var utterance = utteranceCache[word];
   if (!utterance) {
     utterance = new SpeechSynthesisUtterance(word);
-    utterance.rate = 1.5;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
     utteranceCache[word] = utterance;
   }
+  utterance.rate = getSpeechRate();
+
+  // Measure actual speech-engine latency so we can compensate on future beats.
+  var callTime = performance.now();
+  utterance.onstart = function() {
+    var latency = (performance.now() - callTime) / 1000;
+    // Exponential moving average (α = 0.3) — adapts quickly but smooths outliers.
+    estimatedSpeechLatency = estimatedSpeechLatency * 0.7 + latency * 0.3;
+  };
+
   window.speechSynthesis.speak(utterance);
+}
+
+// Schedule a speak() call so the speech audio begins at (or very close to) audioTime.
+// The Transport callback fires ~lookAhead seconds before audioTime.  We use a short
+// setTimeout to delay the speak() call by exactly (leadTime − estimatedSpeechLatency),
+// so the speech engine's own startup latency lands the audio right on the beat.
+function scheduleSpeech(word, audioTime) {
+  if (!('speechSynthesis' in window)) return;
+
+  // Clear any previously queued speech for the next beat
+  if (pendingSpeechTimer !== null) {
+    clearTimeout(pendingSpeechTimer);
+    pendingSpeechTimer = null;
+  }
+
+  var now = Tone.now();
+  var leadTime = audioTime - now; // seconds until the beat sounds
+
+  // Optimal delay: we want fireSpeech() to run estimatedSpeechLatency before audioTime
+  var delayMs = Math.max(0, (leadTime - estimatedSpeechLatency) * 1000);
+
+  if (delayMs < 10) {
+    // Essentially no delay needed — fire immediately
+    fireSpeech(word);
+  } else {
+    pendingSpeechTimer = setTimeout(function() {
+      pendingSpeechTimer = null;
+      fireSpeech(word);
+    }, delayMs);
+  }
+}
+
+// Cancel any pending speech and clear the timer (called when the metronome stops).
+function cancelPendingSpeech() {
+  if (pendingSpeechTimer !== null) {
+    clearTimeout(pendingSpeechTimer);
+    pendingSpeechTimer = null;
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 // Canvas dimensions (will be set dynamically)
@@ -1118,6 +1194,12 @@ function initSettingsListeners() {
   if (voiceCountCheckbox) {
     voiceCountCheckbox.addEventListener('change', (e) => {
       voiceCountEnabled = e.target.checked;
+      // Increase the AudioContext lookAhead when voice counting is active so
+      // Transport callbacks fire earlier, giving us more headroom to pre-fire
+      // speak() calls and compensate for speech-engine latency.
+      if (Tone.context && Tone.context.lookAhead !== undefined) {
+        Tone.context.lookAhead = voiceCountEnabled ? 0.25 : 0.1;
+      }
     });
   }
 
@@ -1370,11 +1452,11 @@ function scheduleMainBeat() {
       // Simple click for every count-in beat
       accentSynth.triggerAttackRelease(isCountInAccent ? "G5" : "A4", "16n", time);
 
-      // Voice cues during count-in
+      // Voice cues during count-in (pass audio time for precise scheduling)
       if (countInBeatsRemaining === 2) {
-        speakWord("ready");
+        speakWord("ready", time);
       } else if (countInBeatsRemaining === 1) {
-        speakWord("go");
+        speakWord("go", time);
         // Trigger the conductor's big upswing so the baton rises on "go"
         // and can come straight down on beat 1 of the real metronome.
         // animBeat=0 makes lastFiredBeatIndex = n-1 (last waypoint), which
@@ -1388,10 +1470,10 @@ function scheduleMainBeat() {
         // 4/4 first count-in measure: speak only on beats 1 & 3 ("one", "two"),
         // leave beats 2 & 4 silent so the pattern is "one – two – | one two ready go".
         if (beatIndex % 2 === 0) {
-          speakWord(String(beatIndex / 2 + 1)); // beatIndex 0→"1", 2→"2"
+          speakWord(String(beatIndex / 2 + 1), time); // beatIndex 0→"1", 2→"2"
         }
       } else {
-        speakWord(String((beatIndex % beatsPerMeasure) + 1));
+        speakWord(String((beatIndex % beatsPerMeasure) + 1), time);
       }
 
       countInBeatsRemaining--;
@@ -1414,8 +1496,8 @@ function scheduleMainBeat() {
     // Store beat number before it gets incremented
     const beatToSpeak = currentBeat + 1; // 1-indexed for speaking
 
-    // Speak beat number immediately (before Tone.Draw) to compensate for speech synthesis latency
-    speakBeatNumber(beatToSpeak);
+    // Schedule speech with precise look-ahead compensation so it lands on the beat
+    speakBeatNumber(beatToSpeak, time);
 
     // Capture beat index before incrementing so Draw callback can use it
     const thisBeat = currentBeat;
@@ -1517,6 +1599,7 @@ function toggleTransport(withCountIn) {
     lastBeatTime = 0;
     animBeat = 0;
     countInBeatsRemaining = 0;
+    cancelPendingSpeech();
     _countInBtn.classList.remove('active');
     _setPlayTogglePlaying(false);
   } else {
