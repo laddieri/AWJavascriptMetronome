@@ -1475,6 +1475,19 @@ scheduleMainBeat();
 const _playToggleEl = document.querySelector('tone-play-toggle');
 const _countInBtn   = document.getElementById('count-in-play-btn');
 
+// tone-play-toggle fires 'change' whenever its 'playing' property changes,
+// including when set programmatically. Use this flag to ignore those synthetic
+// events so we don't double-call toggleTransport.
+let _bypassPlayToggle = false;
+
+function _setPlayTogglePlaying(val) {
+  _bypassPlayToggle = true;
+  _playToggleEl.playing = val;
+  // LitElement dispatches 'change' asynchronously via updated(); clear the
+  // flag after a microtask flush so the event is absorbed before we reset.
+  Promise.resolve().then(() => { _bypassPlayToggle = false; });
+}
+
 function _ensureAudioContext(fn) {
   if (Tone.context.state !== 'running') {
     Tone.context.resume().then(fn);
@@ -1485,6 +1498,7 @@ function _ensureAudioContext(fn) {
 
 // Normal play button: start without count-in
 _playToggleEl.addEventListener('change', () => {
+  if (_bypassPlayToggle) return;
   _ensureAudioContext(() => toggleTransport(false));
 });
 
@@ -1502,7 +1516,7 @@ function toggleTransport(withCountIn) {
     animBeat = 0;
     countInBeatsRemaining = 0;
     _countInBtn.classList.remove('active');
-    _playToggleEl.checked = false;
+    _setPlayTogglePlaying(false);
   } else {
     // Starting: reset beat counter and start fresh
     currentBeat = 0;
@@ -1512,7 +1526,7 @@ function toggleTransport(withCountIn) {
     Tone.Transport.start();
     if (withCountIn) {
       _countInBtn.classList.add('active');
-      _playToggleEl.checked = true;
+      _setPlayTogglePlaying(true);
     }
   }
 }
