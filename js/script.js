@@ -1290,7 +1290,7 @@ function scheduleMainBeat() {
       // Simple click for every count-in beat
       accentSynth.triggerAttackRelease(isCountInAccent ? "G5" : "A4", "16n", time);
 
-      // Voice: "ready" on the second-to-last beat, "go" on the last, numbers otherwise
+      // Voice cues during count-in
       if (countInBeatsRemaining === 2) {
         speakWord("ready");
       } else if (countInBeatsRemaining === 1) {
@@ -1304,6 +1304,12 @@ function scheduleMainBeat() {
           lastBeatTime = Tone.now();
           animBeat = 0;
         }, time);
+      } else if (beatsPerMeasure === 4 && beatIndex < beatsPerMeasure) {
+        // 4/4 first count-in measure: speak only on beats 1 & 3 ("one", "two"),
+        // leave beats 2 & 4 silent so the pattern is "one – two – | one two ready go".
+        if (beatIndex % 2 === 0) {
+          speakWord(String(beatIndex / 2 + 1)); // beatIndex 0→"1", 2→"2"
+        }
       } else {
         speakWord(String((beatIndex % beatsPerMeasure) + 1));
       }
