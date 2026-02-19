@@ -1529,6 +1529,7 @@ function toggleTransport(withCountIn) {
       _setPlayTogglePlaying(true);
     }
   }
+  sendStateUpdate();
 }
 
 //update BPM from slider
@@ -1536,6 +1537,7 @@ document.querySelector('tone-slider').addEventListener('change', e => {
   Tone.Transport.bpm.value = e.detail;
   cachedBPM = e.detail;
   secondsPerBeat = 1 / (e.detail / 60);
+  sendStateUpdate();
 })
 
 // Show/hide color picker based on animation type
@@ -1646,8 +1648,12 @@ function setup() {
       if (slider) {
         slider.setAttribute('value', bpm);
       }
+      sendStateUpdate();
     }
   });
+
+  // Start WebSocket remote control (only active when running from local server)
+  initRemoteControl();
 }
 
 // Handle window resize for responsive canvas
@@ -1703,4 +1709,146 @@ function draw() {
   }
 
   pop();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REMOTE CONTROL — WebSocket client + QR code modal
+//
+// When the app is served from the local Node.js server (node server.js) a
+// WebSocket connection is established automatically.  The 📱 button in the
+// controls becomes visible once the connection succeeds.  Clicking it shows
+// a QR code that the user scans on their phone to open remote.html.
+//
+// The server simply relays every message to all other connected clients, so
+// commands sent by the phone (play / stop / setBPM / requestState) arrive
+// here, and stateUpdate messages sent here arrive on the phone.
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _remoteWS = null;
+
+function initRemoteControl() {
+  var proto  = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var wsURL  = proto + '//' + location.host;
+  var remoteBtn         = document.getElementById('remote-btn');
+  var remoteModal       = document.getElementById('remote-modal');
+  var remoteModalClose  = document.getElementById('remote-modal-close-btn');
+
+  function connectWS() {
+    var ws = new WebSocket(wsURL);
+
+    ws.onopen = function () {
+      _remoteWS = ws;
+      // Show the 📱 button now we know the relay server is reachable
+      if (remoteBtn) remoteBtn.classList.remove('hidden');
+      sendStateUpdate();
+    };
+
+    ws.onmessage = function (evt) {
+      try { applyRemoteCommand(JSON.parse(evt.data)); } catch (e) {}
+    };
+
+    ws.onclose = function () {
+      _remoteWS = null;
+      // Retry quietly — the button stays visible once it has appeared once
+      setTimeout(connectWS, 3000);
+    };
+
+    ws.onerror = function () { ws.close(); };
+  }
+
+  // Only attempt connection when the page is served from a host that
+  // actually runs the WebSocket server (i.e. not GitHub Pages).
+  // We try silently; if it fails the button simply never appears.
+  try { connectWS(); } catch (e) {}
+
+  // QR modal — open
+  if (remoteBtn) {
+    remoteBtn.addEventListener('click', function () { showQRModal(); });
+  }
+
+  // QR modal — close
+  if (remoteModalClose) {
+    remoteModalClose.addEventListener('click', function () {
+      if (remoteModal) remoteModal.classList.add('hidden');
+    });
+  }
+  if (remoteModal) {
+    remoteModal.addEventListener('click', function (e) {
+      if (e.target === remoteModal) remoteModal.classList.add('hidden');
+    });
+  }
+}
+
+function showQRModal() {
+  var remoteModal = document.getElementById('remote-modal');
+  var qrContainer = document.getElementById('qr-code');
+  var urlEl       = document.getElementById('remote-url');
+  if (!remoteModal || !qrContainer) return;
+
+  fetch('/api/info')
+    .then(function (r) { return r.json(); })
+    .then(function (info) {
+      var remoteURL = 'http://' + info.ip + ':' + info.port + '/remote.html';
+      qrContainer.innerHTML = '';
+      // QRCode is loaded from the qrcodejs CDN script in index.html
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: remoteURL,
+          width: 220,
+          height: 220,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
+      if (urlEl) urlEl.textContent = remoteURL;
+    })
+    .catch(function () {
+      if (urlEl) urlEl.textContent = 'Could not reach server — is node server.js running?';
+    });
+
+  remoteModal.classList.remove('hidden');
+}
+
+// Broadcast current play + BPM state to all remote clients
+function sendStateUpdate() {
+  if (!_remoteWS || _remoteWS.readyState !== WebSocket.OPEN) return;
+  _remoteWS.send(JSON.stringify({
+    type:    'stateUpdate',
+    playing: Tone.Transport.state === 'started',
+    bpm:     cachedBPM,
+  }));
+}
+
+// Handle a command arriving from a remote (phone) client
+function applyRemoteCommand(msg) {
+  switch (msg.type) {
+    case 'play':
+      if (Tone.Transport.state !== 'started') {
+        _ensureAudioContext(function () { toggleTransport(false); });
+      }
+      break;
+
+    case 'stop':
+      if (Tone.Transport.state === 'started') {
+        toggleTransport(false);
+      }
+      break;
+
+    case 'setBPM': {
+      var bpm = Math.max(60, Math.min(240, Math.round(msg.bpm)));
+      Tone.Transport.bpm.value = bpm;
+      cachedBPM = bpm;
+      secondsPerBeat = 1 / (bpm / 60);
+      // Sync the on-screen slider
+      var slider = document.querySelector('tone-slider');
+      if (slider) slider.setAttribute('value', bpm);
+      sendStateUpdate();
+      break;
+    }
+
+    case 'requestState':
+      sendStateUpdate();
+      break;
+  }
 }
