@@ -1893,6 +1893,18 @@ function _attachWSHandlers(ws, remoteBtn) {
   // ws.onclose reconnect is already wired in the tryWS IIFE above
 }
 
+// ── QR rendering helper ──────────────────────────────────────────────────────
+function _renderQR(container, url) {
+  container.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(container, {
+      text: url, width: 200, height: 200,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+}
+
 // ── PeerJS (desktop side) ────────────────────────────────────────────────────
 function initPeerMode(remoteBtn) {
   if (typeof Peer === 'undefined') return; // CDN not loaded
@@ -1902,6 +1914,17 @@ function initPeerMode(remoteBtn) {
   _peer.on('open', function (id) {
     _peerId = id;
     if (remoteBtn) remoteBtn.classList.remove('hidden');
+    // If the QR modal is already open in dual-QR (WS) mode, fill in the peer
+    // QR code now — it couldn't be rendered earlier because we didn't have an
+    // ID yet.
+    var dualSection = document.getElementById('remote-dual-section');
+    if (dualSection && !dualSection.classList.contains('hidden')) {
+      var peerQrEl  = document.getElementById('qr-code-peer');
+      var peerUrlEl = document.getElementById('remote-url-peer');
+      var pUrl = location.origin + '/remote.html?p=' + id;
+      if (peerQrEl)  _renderQR(peerQrEl, pUrl);
+      if (peerUrlEl) peerUrlEl.textContent = pUrl;
+    }
   });
 
   _peer.on('connection', function (conn) {
@@ -1939,17 +1962,6 @@ function showQRModal() {
 
   remoteModal.classList.remove('hidden');
 
-  function renderQR(container, url) {
-    container.innerHTML = '';
-    if (typeof QRCode !== 'undefined') {
-      new QRCode(container, {
-        text: url, width: 200, height: 200,
-        colorDark: '#000000', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M,
-      });
-    }
-  }
-
   if (_remoteMode === 'peer') {
     // Pure PeerJS mode (GitHub Pages / static host) — single QR
     var qrContainer = document.getElementById('qr-code');
@@ -1960,7 +1972,7 @@ function showQRModal() {
     if (hintEl) hintEl.textContent = 'Scan on your phone. Works on any network.';
     if (_peerId) {
       var peerUrl = location.origin + '/remote.html?p=' + _peerId;
-      if (qrContainer) renderQR(qrContainer, peerUrl);
+      if (qrContainer) _renderQR(qrContainer, peerUrl);
       if (urlEl) urlEl.textContent = peerUrl;
     } else {
       if (urlEl) urlEl.textContent = 'Connecting to PeerJS\u2026 please wait a moment.';
@@ -1978,7 +1990,7 @@ function showQRModal() {
       .then(function (r) { return r.json(); })
       .then(function (info) {
         var wsUrl = 'http://' + info.ip + ':' + info.port + '/remote.html';
-        if (wsQrEl)  renderQR(wsQrEl, wsUrl);
+        if (wsQrEl)  _renderQR(wsQrEl, wsUrl);
         if (wsUrlEl) wsUrlEl.textContent = wsUrl;
       })
       .catch(function () {
@@ -1987,7 +1999,7 @@ function showQRModal() {
 
     if (_peerId) {
       var pUrl = location.origin + '/remote.html?p=' + _peerId;
-      if (peerQrEl)  renderQR(peerQrEl, pUrl);
+      if (peerQrEl)  _renderQR(peerQrEl, pUrl);
       if (peerUrlEl) peerUrlEl.textContent = pUrl;
     } else {
       if (peerUrlEl) peerUrlEl.textContent = 'Connecting\u2026 please reopen this dialog in a moment.';
