@@ -1712,61 +1712,80 @@ function draw() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// REMOTE CONTROL — WebSocket client + QR code modal
+// REMOTE CONTROL
 //
-// When the app is served from the local Node.js server (node server.js) a
-// WebSocket connection is established automatically.  The 📱 button in the
-// controls becomes visible once the connection succeeds.  Clicking it shows
-// a QR code that the user scans on their phone to open remote.html.
+// Auto-selects a transport on startup:
 //
-// The server simply relays every message to all other connected clients, so
-// commands sent by the phone (play / stop / setBPM / requestState) arrive
-// here, and stateUpdate messages sent here arrive on the phone.
+//   WebSocket relay  (node server.js, local network)
+//     – tries ws:// on the same host; if it connects within 1.5 s, use it
+//     – QR code encodes http://<local-IP>/remote.html  (phone on same Wi-Fi)
+//
+//   PeerJS / WebRTC  (GitHub Pages or any static host)
+//     – fallback when WebSocket fails to connect
+//     – desktop gets a PeerJS peer ID; QR code encodes
+//       <origin>/remote.html?p=<peerID>
+//     – phone opens that URL, connects directly P2P via WebRTC data channel
+//
+// The 📱 button is hidden until one transport is confirmed ready.
 // ═══════════════════════════════════════════════════════════════════════════
 
-var _remoteWS = null;
+var _remoteMode = null;   // 'ws' | 'peer'
+var _remoteWS   = null;
+var _peer       = null;
+var _peerId     = null;
+var _peerConns  = new Set();
 
 function initRemoteControl() {
-  var proto  = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  var wsURL  = proto + '//' + location.host;
-  var remoteBtn         = document.getElementById('remote-btn');
-  var remoteModal       = document.getElementById('remote-modal');
-  var remoteModalClose  = document.getElementById('remote-modal-close-btn');
+  var remoteBtn        = document.getElementById('remote-btn');
+  var remoteModal      = document.getElementById('remote-modal');
+  var remoteModalClose = document.getElementById('remote-modal-close-btn');
 
-  function connectWS() {
-    var ws = new WebSocket(wsURL);
+  // ── Transport detection ──────────────────────────────────────────────────
+  // Try WebSocket to the local server first.  If it connects quickly we stay
+  // in WS mode; otherwise we initialise PeerJS for the GitHub Pages case.
+  var modeDecided = false;
 
-    ws.onopen = function () {
-      _remoteWS = ws;
-      // Show the 📱 button now we know the relay server is reachable
-      if (remoteBtn) remoteBtn.classList.remove('hidden');
-      sendStateUpdate();
-    };
+  function decidePeer() {
+    if (modeDecided) return;
+    modeDecided = true;
+    _remoteMode = 'peer';
+    initPeerMode(remoteBtn);
+  }
 
-    ws.onmessage = function (evt) {
-      try { applyRemoteCommand(JSON.parse(evt.data)); } catch (e) {}
-    };
+  function decideWS(ws) {
+    if (modeDecided) return;
+    modeDecided = true;
+    _remoteMode = 'ws';
+    _attachWSHandlers(ws, remoteBtn);
+  }
+
+  // Opened in an IIFE so the inner tryWS can tail-call itself for reconnects
+  (function tryWS() {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws    = new WebSocket(proto + '//' + location.host);
+
+    ws.onopen  = function () { decideWS(ws); };
+    ws.onerror = function () {};  // onclose follows; handled below
 
     ws.onclose = function () {
-      _remoteWS = null;
-      // Retry quietly — the button stays visible once it has appeared once
-      setTimeout(connectWS, 3000);
+      if (_remoteMode === 'ws') {
+        // Mid-session drop after mode was confirmed: reconnect
+        _remoteWS = null;
+        setTimeout(tryWS, 3000);
+      }
+      // If still in detection phase, the timeout below fires decidePeer
     };
 
-    ws.onerror = function () { ws.close(); };
-  }
+    // If WS hasn't connected within 1.5 s, assume no local server → PeerJS
+    setTimeout(function () {
+      if (!modeDecided) { try { ws.close(); } catch (e) {} decidePeer(); }
+    }, 1500);
+  })();
 
-  // Only attempt connection when the page is served from a host that
-  // actually runs the WebSocket server (i.e. not GitHub Pages).
-  // We try silently; if it fails the button simply never appears.
-  try { connectWS(); } catch (e) {}
-
-  // QR modal — open
+  // ── Modal wiring ─────────────────────────────────────────────────────────
   if (remoteBtn) {
-    remoteBtn.addEventListener('click', function () { showQRModal(); });
+    remoteBtn.addEventListener('click', showQRModal);
   }
-
-  // QR modal — close
   if (remoteModalClose) {
     remoteModalClose.addEventListener('click', function () {
       if (remoteModal) remoteModal.classList.add('hidden');
@@ -1779,48 +1798,111 @@ function initRemoteControl() {
   }
 }
 
+function _attachWSHandlers(ws, remoteBtn) {
+  _remoteWS = ws;
+  if (remoteBtn) remoteBtn.classList.remove('hidden');
+  sendStateUpdate();
+  ws.onmessage = function (evt) {
+    try { applyRemoteCommand(JSON.parse(evt.data)); } catch (e) {}
+  };
+  // ws.onclose reconnect is already wired in the tryWS IIFE above
+}
+
+// ── PeerJS (desktop side) ────────────────────────────────────────────────────
+function initPeerMode(remoteBtn) {
+  if (typeof Peer === 'undefined') return; // CDN not loaded
+
+  _peer = new Peer();
+
+  _peer.on('open', function (id) {
+    _peerId = id;
+    if (remoteBtn) remoteBtn.classList.remove('hidden');
+  });
+
+  _peer.on('connection', function (conn) {
+    conn.on('open', function () {
+      _peerConns.add(conn);
+      // Push current state to the newly connected phone immediately
+      if (conn.open) conn.send({
+        type: 'stateUpdate',
+        playing: Tone.Transport.state === 'started',
+        bpm: cachedBPM,
+      });
+    });
+    conn.on('data', function (data) {
+      try {
+        var msg = (typeof data === 'string') ? JSON.parse(data) : data;
+        applyRemoteCommand(msg);
+      } catch (e) {}
+    });
+    conn.on('close', function () { _peerConns.delete(conn); });
+    conn.on('error', function () { _peerConns.delete(conn); });
+  });
+
+  _peer.on('error', function (err) {
+    console.warn('PeerJS:', err.type);
+  });
+}
+
+// ── QR code modal ────────────────────────────────────────────────────────────
 function showQRModal() {
   var remoteModal = document.getElementById('remote-modal');
   var qrContainer = document.getElementById('qr-code');
   var urlEl       = document.getElementById('remote-url');
+  var hintEl      = document.getElementById('remote-modal-hint');
   if (!remoteModal || !qrContainer) return;
 
-  fetch('/api/info')
-    .then(function (r) { return r.json(); })
-    .then(function (info) {
-      var remoteURL = 'http://' + info.ip + ':' + info.port + '/remote.html';
-      qrContainer.innerHTML = '';
-      // QRCode is loaded from the qrcodejs CDN script in index.html
-      if (typeof QRCode !== 'undefined') {
-        new QRCode(qrContainer, {
-          text: remoteURL,
-          width: 220,
-          height: 220,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-      }
-      if (urlEl) urlEl.textContent = remoteURL;
-    })
-    .catch(function () {
-      if (urlEl) urlEl.textContent = 'Could not reach server — is node server.js running?';
-    });
-
   remoteModal.classList.remove('hidden');
+
+  function renderQR(url) {
+    qrContainer.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrContainer, {
+        text: url, width: 220, height: 220,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
+    if (urlEl) urlEl.textContent = url;
+  }
+
+  if (_remoteMode === 'peer') {
+    if (hintEl) hintEl.textContent = 'Scan on your phone. Works on any network.';
+    if (_peerId) {
+      renderQR(location.origin + '/remote.html?p=' + _peerId);
+    } else {
+      if (urlEl) urlEl.textContent = 'Connecting to PeerJS\u2026 please wait a moment.';
+    }
+  } else if (_remoteMode === 'ws') {
+    if (hintEl) hintEl.textContent = 'Make sure your phone is on the same Wi-Fi network, then scan.';
+    fetch('/api/info')
+      .then(function (r) { return r.json(); })
+      .then(function (info) {
+        renderQR('http://' + info.ip + ':' + info.port + '/remote.html');
+      })
+      .catch(function () {
+        if (urlEl) urlEl.textContent = 'Could not reach server \u2014 is node server.js running?';
+      });
+  }
 }
 
-// Broadcast current play + BPM state to all remote clients
+// ── State broadcast ───────────────────────────────────────────────────────────
 function sendStateUpdate() {
-  if (!_remoteWS || _remoteWS.readyState !== WebSocket.OPEN) return;
-  _remoteWS.send(JSON.stringify({
+  var state = {
     type:    'stateUpdate',
     playing: Tone.Transport.state === 'started',
     bpm:     cachedBPM,
-  }));
+  };
+  if (_remoteMode === 'ws' && _remoteWS && _remoteWS.readyState === WebSocket.OPEN) {
+    _remoteWS.send(JSON.stringify(state));
+  } else if (_remoteMode === 'peer') {
+    _peerConns.forEach(function (conn) {
+      if (conn.open) conn.send(state);
+    });
+  }
 }
 
-// Handle a command arriving from a remote (phone) client
+// ── Command handler (shared by both transports) ───────────────────────────────
 function applyRemoteCommand(msg) {
   switch (msg.type) {
     case 'play':
@@ -1840,7 +1922,6 @@ function applyRemoteCommand(msg) {
       Tone.Transport.bpm.value = bpm;
       cachedBPM = bpm;
       secondsPerBeat = 1 / (bpm / 60);
-      // Sync the on-screen slider
       var slider = document.querySelector('tone-slider');
       if (slider) slider.setAttribute('value', bpm);
       sendStateUpdate();

@@ -145,53 +145,25 @@
     <p class="hint">Hold +/&minus; to change quickly</p>
   </div>
 
+  <!-- PeerJS loaded for the GitHub Pages / static-host path -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
   <script>
-    var ws;
-    var isPlaying = false;
-    var currentBPM = 60;
+    // ── Mode detection ───────────────────────────────────────────────────────
+    // ?p=<peerID>  → PeerJS (WebRTC) — used from GitHub Pages or any static host
+    // (no param)   → WebSocket relay — used when node server.js is running locally
+    var PARAMS      = new URLSearchParams(location.search);
+    var MODE        = PARAMS.has('p') ? 'peer' : 'ws';
+    var PEER_TARGET = PARAMS.get('p');
+
+    // ── UI state ─────────────────────────────────────────────────────────────
+    var isPlaying    = false;
+    var currentBPM   = 60;
     var sliderDragging = false;
 
     var statusEl  = document.getElementById('status');
     var playBtn   = document.getElementById('play-btn');
     var bpmDisp   = document.getElementById('bpm-display');
     var bpmSlider = document.getElementById('bpm-slider');
-
-    // ── WebSocket connection ─────────────────────────────────────────────────
-    function connect() {
-      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(proto + '//' + location.host);
-
-      ws.onopen = function () {
-        statusEl.textContent = 'Connected';
-        statusEl.className = 'connected';
-        send({ type: 'requestState' });
-      };
-
-      ws.onclose = function () {
-        statusEl.textContent = 'Reconnecting\u2026';
-        statusEl.className = 'disconnected';
-        setTimeout(connect, 2000);
-      };
-
-      ws.onerror = function () { ws.close(); };
-
-      ws.onmessage = function (evt) {
-        try {
-          var msg = JSON.parse(evt.data);
-          if (msg.type === 'stateUpdate') {
-            isPlaying  = msg.playing;
-            currentBPM = msg.bpm;
-            updateUI();
-          }
-        } catch (e) {}
-      };
-    }
-
-    function send(msg) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(msg));
-      }
-    }
 
     function updateUI() {
       playBtn.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
@@ -200,12 +172,106 @@
       if (!sliderDragging) bpmSlider.value = currentBPM;
     }
 
-    // ── Play / Stop ──────────────────────────────────────────────────────────
+    function onStateUpdate(msg) {
+      isPlaying  = msg.playing;
+      currentBPM = msg.bpm;
+      updateUI();
+    }
+
+    // ── Unified send ─────────────────────────────────────────────────────────
+    var _ws       = null;
+    var _peerConn = null;
+
+    function send(msg) {
+      if (MODE === 'ws') {
+        if (_ws && _ws.readyState === WebSocket.OPEN) _ws.send(JSON.stringify(msg));
+      } else {
+        if (_peerConn && _peerConn.open) _peerConn.send(msg);
+      }
+    }
+
+    // ── WebSocket transport ───────────────────────────────────────────────────
+    function connectWS() {
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      _ws = new WebSocket(proto + '//' + location.host);
+
+      _ws.onopen = function () {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'connected';
+        send({ type: 'requestState' });
+      };
+
+      _ws.onclose = function () {
+        statusEl.textContent = 'Reconnecting\u2026';
+        statusEl.className = 'disconnected';
+        setTimeout(connectWS, 2000);
+      };
+
+      _ws.onerror = function () { _ws.close(); };
+
+      _ws.onmessage = function (evt) {
+        try {
+          var msg = JSON.parse(evt.data);
+          if (msg.type === 'stateUpdate') onStateUpdate(msg);
+        } catch (e) {}
+      };
+    }
+
+    // ── PeerJS transport ──────────────────────────────────────────────────────
+    var _myPeer = null;
+
+    function connectPeer() {
+      // Reuse existing peer if it's still alive; only create a new one if needed
+      if (_myPeer && !_myPeer.destroyed) {
+        doConnect();
+        return;
+      }
+      _myPeer = new Peer();
+      _myPeer.on('open', doConnect);
+      _myPeer.on('error', function (err) {
+        console.warn('Peer error:', err.type);
+        if (_myPeer.destroyed) setTimeout(connectPeer, 3000);
+      });
+    }
+
+    function doConnect() {
+      statusEl.textContent = 'Connecting\u2026';
+      statusEl.className = 'disconnected';
+
+      var conn = _myPeer.connect(PEER_TARGET, { reliable: true });
+      _peerConn = conn;
+
+      conn.on('open', function () {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'connected';
+        send({ type: 'requestState' });
+      });
+
+      conn.on('data', function (data) {
+        try {
+          var msg = (typeof data === 'string') ? JSON.parse(data) : data;
+          if (msg.type === 'stateUpdate') onStateUpdate(msg);
+        } catch (e) {}
+      });
+
+      conn.on('close', function () {
+        _peerConn = null;
+        statusEl.textContent = 'Reconnecting\u2026';
+        statusEl.className = 'disconnected';
+        setTimeout(doConnect, 2000);
+      });
+
+      conn.on('error', function () {
+        _peerConn = null;
+        setTimeout(doConnect, 2000);
+      });
+    }
+
+    // ── Controls ──────────────────────────────────────────────────────────────
     playBtn.addEventListener('click', function () {
       send({ type: isPlaying ? 'stop' : 'play' });
     });
 
-    // ── BPM slider ───────────────────────────────────────────────────────────
     bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });
     bpmSlider.addEventListener('touchstart', function () { sliderDragging = true; }, { passive: true });
     bpmSlider.addEventListener('input', function () {
@@ -216,45 +282,39 @@
       send({ type: 'setBPM', bpm: parseInt(this.value, 10) });
     });
 
-    // ── +/- buttons with hold-to-repeat ─────────────────────────────────────
+    // +/- buttons with hold-to-repeat
     function changeBPM(delta) {
       var next = Math.max(60, Math.min(240, currentBPM + delta));
-      if (next === currentBPM) return;
-      send({ type: 'setBPM', bpm: next });
+      if (next !== currentBPM) send({ type: 'setBPM', bpm: next });
     }
 
     function setupHoldButton(el, delta) {
-      var interval = null;
-      var delay = null;
-
+      var interval = null, delay = null;
       function start() {
         changeBPM(delta);
         delay = setTimeout(function () {
           interval = setInterval(function () { changeBPM(delta); }, 80);
         }, 400);
       }
-
-      function stop() {
-        clearTimeout(delay);
-        clearInterval(interval);
-        delay = null;
-        interval = null;
-      }
-
-      el.addEventListener('mousedown',  start);
-      el.addEventListener('touchstart', start, { passive: true });
-      el.addEventListener('mouseup',    stop);
-      el.addEventListener('mouseleave', stop);
-      el.addEventListener('touchend',   stop);
-      el.addEventListener('touchcancel',stop);
-      // Prevent the click event from firing a second changeBPM call
+      function stop() { clearTimeout(delay); clearInterval(interval); delay = interval = null; }
+      el.addEventListener('mousedown',   start);
+      el.addEventListener('touchstart',  start, { passive: true });
+      el.addEventListener('mouseup',     stop);
+      el.addEventListener('mouseleave',  stop);
+      el.addEventListener('touchend',    stop);
+      el.addEventListener('touchcancel', stop);
       el.addEventListener('click', function (e) { e.preventDefault(); });
     }
 
     setupHoldButton(document.getElementById('bpm-minus'), -1);
     setupHoldButton(document.getElementById('bpm-plus'),  +1);
 
-    connect();
+    // ── Start ─────────────────────────────────────────────────────────────────
+    if (MODE === 'ws') {
+      connectWS();
+    } else {
+      connectPeer();
+    }
   </script>
 </body>
 </html>
