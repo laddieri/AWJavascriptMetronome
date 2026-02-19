@@ -176,7 +176,7 @@
       <button class="bpm-btn" id="bpm-minus" aria-label="Decrease BPM">&#8722;</button>
       <button class="bpm-btn" id="bpm-plus"  aria-label="Increase BPM">+</button>
     </div>
-    <input type="range" id="bpm-slider" min="60" max="240" value="60" aria-label="BPM slider">
+    <input type="range" id="bpm-slider" min="60" max="240" value="96" aria-label="BPM slider">
     <p class="hint">Hold +/&minus; to change quickly</p>
   </div>
 
@@ -192,7 +192,7 @@
 
     // ── UI state ─────────────────────────────────────────────────────────────
     var isPlaying    = false;
-    var currentBPM   = 60;
+    var currentBPM   = 96;
     var sliderDragging = false;
 
     var statusEl    = document.getElementById('status');

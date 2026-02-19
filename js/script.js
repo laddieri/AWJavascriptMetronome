@@ -2,7 +2,7 @@ var xpos=0;
 var rad=50;
 var t=0;
 var secondsPerBeat = 1;
-var cachedBPM = 60;
+var cachedBPM = 96;
 var animal1;
 var animal2;
 var animalType = 'circle'; // 'circle', 'pig', 'cat', 'dog', 'bird', etc.
@@ -1144,7 +1144,7 @@ function resumeAudioContext() {
   if (Tone.context.state !== 'running') {
     Tone.context.resume().then(function() {
       audioContextResumed = true;
-      Tone.Transport.bpm.value = cachedBPM || 60;
+      Tone.Transport.bpm.value = cachedBPM || 96;
     }).catch(function(err) {
       console.warn('AudioContext resume failed, will retry on next interaction:', err);
     });
