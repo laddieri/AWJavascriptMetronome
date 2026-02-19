@@ -27,6 +27,7 @@ var animalSoundEnabled = true; // Play animal sound on beat
 var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
+var rockBeatEnabled = false; // Rock beat drum machine (4/4 only)
 var countInBeatsRemaining = 0; // Counts down during the count-in phase
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 var animBeat = 0;    // Beat index for conductor animation, updated in Draw callback
@@ -1052,8 +1053,33 @@ function initSettingsListeners() {
     timeSignatureSelect.addEventListener('change', (e) => {
       beatsPerMeasure = parseInt(e.target.value);
       currentBeat = 0; // Reset to beat 1
+      updateRockBeatVisibility();
     });
   }
+
+  // Rock beat toggle
+  const rockBeatCheckbox = document.getElementById('rock-beat-enabled');
+  const rockBeatGroup = document.getElementById('rock-beat-setting-group');
+
+  function updateRockBeatVisibility() {
+    if (rockBeatGroup) {
+      rockBeatGroup.style.display = beatsPerMeasure === 4 ? '' : 'none';
+    }
+    // Auto-disable rock beat if time signature changes away from 4/4
+    if (beatsPerMeasure !== 4 && rockBeatEnabled) {
+      rockBeatEnabled = false;
+      if (rockBeatCheckbox) rockBeatCheckbox.checked = false;
+    }
+  }
+
+  if (rockBeatCheckbox) {
+    rockBeatCheckbox.addEventListener('change', (e) => {
+      rockBeatEnabled = e.target.checked;
+    });
+  }
+
+  // Show rock beat option if starting in 4/4
+  updateRockBeatVisibility();
 
   // Subdivision change
   if (subdivisionSelect) {
@@ -1218,6 +1244,44 @@ var accentSynth = new Tone.Synth({
 }).toMaster();
 accentSynth.volume.value = 0; // Audible accent level
 
+// Rock beat drum synthesizers (used when rockBeatEnabled is true in 4/4 time)
+var kickSynth = new Tone.MembraneSynth({
+  pitchDecay: 0.05,
+  octaves: 6,
+  envelope: {
+    attack: 0.001,
+    decay: 0.3,
+    sustain: 0,
+    release: 0.1
+  }
+}).toMaster();
+kickSynth.volume.value = 3;
+
+var snareSynth = new Tone.NoiseSynth({
+  noise: { type: "white" },
+  envelope: {
+    attack: 0.001,
+    decay: 0.12,
+    sustain: 0,
+    release: 0.05
+  }
+}).toMaster();
+snareSynth.volume.value = -4;
+
+var hihatSynth = new Tone.MetalSynth({
+  frequency: 400,
+  envelope: {
+    attack: 0.001,
+    decay: 0.06,
+    release: 0.01
+  },
+  harmonicity: 5.1,
+  modulationIndex: 32,
+  resonance: 4000,
+  octaves: 1.5
+}).toMaster();
+hihatSynth.volume.value = -12;
+
 // TriggerSound Play - switches based on animal type
 function triggerSound(time, isAccent = false){
   // Play accent on beat 1 if enabled (higher pitched click)
@@ -1267,6 +1331,28 @@ function triggerSubdivision(time) {
   subdivisionSynth.triggerAttackRelease("C5", "32n", time);
 }
 
+// Play rock beat pattern for the given beat index (0-3 in 4/4)
+// Pattern: kick on 1 & 3, snare on 2 & 4, hi-hat on every 8th note
+function triggerRockBeat(time, beat) {
+  const beatDuration = Tone.Time("4n").toSeconds();
+
+  // Hi-hat on the downbeat (quarter note)
+  hihatSynth.triggerAttackRelease("16n", time);
+
+  // Kick drum on beats 1 and 3 (indices 0 and 2)
+  if (beat === 0 || beat === 2) {
+    kickSynth.triggerAttackRelease("C1", "8n", time);
+  }
+
+  // Snare drum on beats 2 and 4 (indices 1 and 3)
+  if (beat === 1 || beat === 3) {
+    snareSynth.triggerAttackRelease("8n", time);
+  }
+
+  // Hi-hat on the "and" (upbeat 8th note)
+  hihatSynth.triggerAttackRelease("16n", time + beatDuration / 2);
+}
+
 // Subdivision event IDs (to cancel when settings change)
 var subdivisionEvents = [];
 
@@ -1311,12 +1397,17 @@ function scheduleMainBeat() {
     }
     // ────────────────────────────────────────────────────────────────────────
 
-    // Determine if this is beat 1 (accented)
-    const isAccent = currentBeat === 0;
-    triggerSound(time, isAccent);
+    // Rock beat mode: play drum pattern instead of normal click sounds
+    if (rockBeatEnabled && beatsPerMeasure === 4) {
+      triggerRockBeat(time, currentBeat);
+    } else {
+      // Determine if this is beat 1 (accented)
+      const isAccent = currentBeat === 0;
+      triggerSound(time, isAccent);
 
-    // Schedule subdivisions for this beat
-    scheduleSubdivisionsForBeat(time);
+      // Schedule subdivisions for this beat
+      scheduleSubdivisionsForBeat(time);
+    }
 
     // Store beat number before it gets incremented
     const beatToSpeak = currentBeat + 1; // 1-indexed for speaking
