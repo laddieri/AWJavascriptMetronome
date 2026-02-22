@@ -268,6 +268,8 @@ function enterFullscreen() {
     canvasScale = size.scale;
     resizeCanvas(canvasWidth, canvasHeight);
   }, 50);
+
+  sendStateUpdate();
 }
 
 // Exit fullscreen mode
@@ -302,6 +304,8 @@ function exitFullscreen() {
     canvasScale = size.scale;
     resizeCanvas(canvasWidth, canvasHeight);
   }, 50);
+
+  sendStateUpdate();
 }
 
 // Initialize fullscreen listeners
@@ -1125,6 +1129,7 @@ function initSettingsListeners() {
       beatsPerMeasure = parseInt(e.target.value);
       currentBeat = 0; // Reset to beat 1
       updateRockBeatVisibility();
+      sendStateUpdate();
     });
   }
 
@@ -1146,6 +1151,7 @@ function initSettingsListeners() {
   if (rockBeatCheckbox) {
     rockBeatCheckbox.addEventListener('change', (e) => {
       rockBeatEnabled = e.target.checked;
+      sendStateUpdate();
     });
   }
 
@@ -1156,6 +1162,7 @@ function initSettingsListeners() {
   if (subdivisionSelect) {
     subdivisionSelect.addEventListener('change', (e) => {
       subdivision = e.target.value;
+      sendStateUpdate();
     });
   }
 
@@ -1164,6 +1171,7 @@ function initSettingsListeners() {
   if (animalSoundCheckbox) {
     animalSoundCheckbox.addEventListener('change', (e) => {
       animalSoundEnabled = e.target.checked;
+      sendStateUpdate();
     });
   }
 
@@ -1171,6 +1179,7 @@ function initSettingsListeners() {
   if (accentCheckbox) {
     accentCheckbox.addEventListener('change', (e) => {
       accentEnabled = e.target.checked;
+      sendStateUpdate();
     });
   }
 
@@ -1179,6 +1188,7 @@ function initSettingsListeners() {
   if (flashCheckbox) {
     flashCheckbox.addEventListener('change', (e) => {
       flashEnabled = e.target.checked;
+      sendStateUpdate();
     });
   }
 
@@ -1187,6 +1197,7 @@ function initSettingsListeners() {
   if (voiceCountCheckbox) {
     voiceCountCheckbox.addEventListener('change', (e) => {
       voiceCountEnabled = e.target.checked;
+      sendStateUpdate();
     });
   }
 
@@ -1196,6 +1207,7 @@ function initSettingsListeners() {
   if (circleColorPicker) {
     circleColorPicker.addEventListener('input', (e) => {
       circleColor = e.target.value;
+      sendStateUpdate();
     });
   }
 }
@@ -1741,6 +1753,7 @@ function setup() {
     }
 
     createAnimals(); // Recreate animals when selection changes
+    sendStateUpdate();
   });
 
   // Conductor selfie button — opens camera to capture a face for the conductor
@@ -1752,6 +1765,7 @@ function setup() {
   // Bounce direction dropdown
   document.querySelector('#bounce-direction').addEventListener('change', e => {
     bounceDirection = e.target.value;
+    sendStateUpdate();
   });
 
   // Initial color picker visibility
@@ -1976,9 +1990,20 @@ function initPeerMode(remoteBtn) {
       _closeRemoteModal();
       // Push current state to the newly connected phone immediately
       if (conn.open) conn.send({
-        type: 'stateUpdate',
-        playing: Tone.Transport.state === 'started',
-        bpm: cachedBPM,
+        type:             'stateUpdate',
+        playing:          Tone.Transport.state === 'started',
+        bpm:              cachedBPM,
+        animation:        animalType,
+        direction:        bounceDirection,
+        beatsPerMeasure:  beatsPerMeasure,
+        subdivision:      subdivision,
+        soundEnabled:     animalSoundEnabled,
+        accentEnabled:    accentEnabled,
+        flashEnabled:     flashEnabled,
+        voiceCountEnabled: voiceCountEnabled,
+        rockBeatEnabled:  rockBeatEnabled,
+        isFullscreen:     isFullscreen,
+        circleColor:      circleColor,
       });
     });
     conn.on('data', function (data) {
@@ -2059,9 +2084,20 @@ function _closeRemoteModal() {
 // ── State broadcast ───────────────────────────────────────────────────────────
 function sendStateUpdate() {
   var state = {
-    type:    'stateUpdate',
-    playing: Tone.Transport.state === 'started',
-    bpm:     cachedBPM,
+    type:             'stateUpdate',
+    playing:          Tone.Transport.state === 'started',
+    bpm:              cachedBPM,
+    animation:        animalType,
+    direction:        bounceDirection,
+    beatsPerMeasure:  beatsPerMeasure,
+    subdivision:      subdivision,
+    soundEnabled:     animalSoundEnabled,
+    accentEnabled:    accentEnabled,
+    flashEnabled:     flashEnabled,
+    voiceCountEnabled: voiceCountEnabled,
+    rockBeatEnabled:  rockBeatEnabled,
+    isFullscreen:     isFullscreen,
+    circleColor:      circleColor,
   };
   if (_remoteMode === 'ws' && _remoteWS && _remoteWS.readyState === WebSocket.OPEN) {
     _remoteWS.send(JSON.stringify(state));
@@ -2099,6 +2135,119 @@ function applyRemoteCommand(msg) {
 
     case 'setBPM': {
       applyBPM(Math.round(msg.bpm));
+      break;
+    }
+
+    case 'setAnimation': {
+      var val = msg.value;
+      if (['circle', 'pig', 'selfie', 'conductor'].indexOf(val) === -1) break;
+      animalType = val;
+      var selector = document.getElementById('animal-selector');
+      if (selector) selector.value = val;
+      updateColorPickerVisibility();
+      createAnimals();
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setDirection': {
+      var dir = msg.value;
+      if (dir !== 'horizontal' && dir !== 'vertical') break;
+      bounceDirection = dir;
+      var dirSel = document.getElementById('bounce-direction');
+      if (dirSel) dirSel.value = dir;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setBeatsPerMeasure': {
+      var bpm = parseInt(msg.value);
+      if (bpm < 1 || bpm > 9 || isNaN(bpm)) break;
+      beatsPerMeasure = bpm;
+      currentBeat = 0;
+      var tsSel = document.getElementById('time-signature');
+      if (tsSel) tsSel.value = bpm;
+      // Auto-disable rock beat if not 4/4
+      if (bpm !== 4 && rockBeatEnabled) {
+        rockBeatEnabled = false;
+        var rbCb = document.getElementById('rock-beat-enabled');
+        if (rbCb) rbCb.checked = false;
+      }
+      var rbGroup = document.getElementById('rock-beat-setting-group');
+      if (rbGroup) rbGroup.style.display = bpm === 4 ? '' : 'none';
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setSubdivision': {
+      var sub = msg.value;
+      if (['none', 'eighth', 'triplet', 'sixteenth'].indexOf(sub) === -1) break;
+      subdivision = sub;
+      var subSel = document.getElementById('subdivision');
+      if (subSel) subSel.value = sub;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setSoundEnabled': {
+      animalSoundEnabled = !!msg.value;
+      var sndCb = document.getElementById('animal-sound-enabled');
+      if (sndCb) sndCb.checked = animalSoundEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setAccentEnabled': {
+      accentEnabled = !!msg.value;
+      var accCb = document.getElementById('accent-enabled');
+      if (accCb) accCb.checked = accentEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setFlashEnabled': {
+      flashEnabled = !!msg.value;
+      var flCb = document.getElementById('flash-enabled');
+      if (flCb) flCb.checked = flashEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setVoiceCountEnabled': {
+      voiceCountEnabled = !!msg.value;
+      var vcCb = document.getElementById('voice-count-enabled');
+      if (vcCb) vcCb.checked = voiceCountEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setRockBeatEnabled': {
+      if (beatsPerMeasure !== 4) break;
+      rockBeatEnabled = !!msg.value;
+      var rbCb2 = document.getElementById('rock-beat-enabled');
+      if (rbCb2) rbCb2.checked = rockBeatEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'toggleFullscreen': {
+      if (isFullscreen) {
+        exitFullscreen();
+      } else {
+        enterFullscreen();
+      }
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setCircleColor': {
+      var c = msg.value;
+      if (typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c)) {
+        circleColor = c;
+        var cp = document.getElementById('circle-color');
+        if (cp) cp.value = c;
+        sendStateUpdate();
+      }
       break;
     }
 
