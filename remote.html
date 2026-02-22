@@ -15,9 +15,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 40px;
-      padding: 32px 24px;
+      gap: 28px;
+      padding: 24px 20px 40px;
       touch-action: manipulation;
     }
 
@@ -49,8 +48,8 @@
     }
 
     .play-circle {
-      width: 130px;
-      height: 130px;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
       border: none;
       line-height: 1;
@@ -67,13 +66,9 @@
 
     /* Normal play/stop */
     #play-btn {
-      font-size: 3.2rem;
+      font-size: 2.8rem;
       background: #2563eb;
       box-shadow: 0 0 36px rgba(37, 99, 235, 0.45);
-    }
-    #play-btn.playing {
-      background: #dc2626;
-      box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
     }
 
     /* Count-in "+2" */
@@ -83,21 +78,16 @@
       background: #065f46;
       box-shadow: 0 0 36px rgba(6, 95, 70, 0.4);
     }
-    #count-in-btn .ci-play  { font-size: 1.8rem; line-height: 1; }
-    #count-in-btn .ci-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
-    #count-in-btn.playing {
-      font-size: 3.2rem;
-      background: #dc2626;
-      box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
-    }
+    #count-in-btn .ci-play  { font-size: 1.5rem; line-height: 1; }
+    #count-in-btn .ci-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
 
-    /* Combined stop button (replaces both play buttons when playing) */
+    /* Combined stop button */
     #remote-stop-btn {
-      font-size: 3.2rem;
+      font-size: 2.8rem;
       background: #dc2626;
       box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
-      width: 280px;
-      border-radius: 65px;
+      width: 240px;
+      border-radius: 55px;
     }
 
     /* ── BPM section ──────────────────────────────────────────────────────── */
@@ -105,12 +95,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 12px;
       width: 100%;
       max-width: 320px;
     }
 
-    .bpm-label {
+    .section-label {
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
@@ -119,7 +109,7 @@
     }
 
     #bpm-display {
-      font-size: 5rem;
+      font-size: 4rem;
       font-weight: 800;
       line-height: 1;
       min-width: 5rem;
@@ -134,13 +124,13 @@
     }
 
     .bpm-btn {
-      width: 80px;
-      height: 80px;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
       border: 2px solid #374151;
       background: #1f2937;
       color: #e5e7eb;
-      font-size: 2.4rem;
+      font-size: 2rem;
       line-height: 1;
       cursor: pointer;
       user-select: none;
@@ -164,6 +154,148 @@
       color: #4b5563;
       text-align: center;
     }
+
+    /* ── Settings panel ───────────────────────────────────────────────────── */
+    .settings-panel {
+      width: 100%;
+      max-width: 360px;
+      background: #1f2937;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .settings-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .settings-toggle-btn {
+      background: none;
+      border: 1px solid #374151;
+      color: #9ca3af;
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .settings-toggle-btn:active { background: #374151; }
+
+    .settings-body { display: flex; flex-direction: column; gap: 14px; }
+    .settings-body.collapsed { display: none; }
+
+    /* ── Setting rows ─────────────────────────────────────────────────────── */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .setting-label {
+      font-size: 0.82rem;
+      color: #d1d5db;
+      white-space: nowrap;
+    }
+
+    .setting-select {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      min-width: 0;
+      flex-shrink: 1;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    /* ── Toggle switch ────────────────────────────────────────────────────── */
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #374151;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+    }
+    .toggle-switch input:checked + .toggle-track {
+      background: #2563eb;
+    }
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(20px);
+    }
+
+    /* ── Fullscreen button ────────────────────────────────────────────────── */
+    .fullscreen-btn {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #374151;
+      border-radius: 12px;
+      background: #1f2937;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fullscreen-btn:active { background: #374151; }
+    .fullscreen-btn.active {
+      background: #1e3a5f;
+      border-color: #2563eb;
+      color: #93c5fd;
+    }
+
+    /* ── Color picker row ─────────────────────────────────────────────────── */
+    .color-input {
+      width: 40px;
+      height: 28px;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────────────────── */
+    .setting-divider {
+      border: none;
+      border-top: 1px solid #374151;
+      margin: 2px 0;
+    }
   </style>
 </head>
 <body>
@@ -180,29 +312,141 @@
   </div>
 
   <div class="bpm-section">
-    <div class="bpm-label">Tempo (BPM)</div>
+    <div class="section-label">Tempo (BPM)</div>
     <div id="bpm-display">--</div>
     <div class="bpm-controls">
       <button class="bpm-btn" id="bpm-minus" aria-label="Decrease BPM">&#8722;</button>
       <button class="bpm-btn" id="bpm-plus"  aria-label="Increase BPM">+</button>
     </div>
-    <input type="range" id="bpm-slider" min="60" max="240" value="96" aria-label="BPM slider">
+    <input type="range" id="bpm-slider" min="30" max="300" value="96" aria-label="BPM slider">
     <p class="hint">Hold +/&minus; to change quickly</p>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel">
+    <div class="settings-header">
+      <span class="settings-title">Settings</span>
+      <button id="settings-toggle" class="settings-toggle-btn">Hide</button>
+    </div>
+
+    <div id="settings-body" class="settings-body">
+      <!-- Fullscreen toggle -->
+      <button id="fullscreen-toggle" class="fullscreen-btn">&#x26F6; Toggle Fullscreen</button>
+
+      <hr class="setting-divider">
+
+      <!-- Animation -->
+      <div class="setting-row">
+        <span class="setting-label">Animation</span>
+        <select id="r-animation" class="setting-select">
+          <option value="circle">Circles</option>
+          <option value="pig">Pig</option>
+          <option value="selfie">Selfie</option>
+          <option value="conductor">Conductor</option>
+        </select>
+      </div>
+
+      <!-- Direction (hidden for conductor) -->
+      <div class="setting-row" id="r-direction-row">
+        <span class="setting-label">Direction</span>
+        <select id="r-direction" class="setting-select">
+          <option value="horizontal">Horizontal</option>
+          <option value="vertical">Vertical</option>
+        </select>
+      </div>
+
+      <!-- Circle color (shown only for circle) -->
+      <div class="setting-row" id="r-color-row" style="display:none">
+        <span class="setting-label">Circle Color</span>
+        <input type="color" id="r-color" class="color-input" value="#000000">
+      </div>
+
+      <hr class="setting-divider">
+
+      <!-- Beats per measure -->
+      <div class="setting-row">
+        <span class="setting-label">Beats / Measure</span>
+        <select id="r-beats" class="setting-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+        </select>
+      </div>
+
+      <!-- Subdivision -->
+      <div class="setting-row">
+        <span class="setting-label">Subdivision</span>
+        <select id="r-subdivision" class="setting-select">
+          <option value="none">None</option>
+          <option value="eighth">8th notes</option>
+          <option value="triplet">Triplets</option>
+          <option value="sixteenth">16th notes</option>
+        </select>
+      </div>
+
+      <hr class="setting-divider">
+
+      <!-- Toggle switches -->
+      <div class="setting-row">
+        <span class="setting-label">Metronome Sound</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-sound" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Accent Beat 1</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-accent" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Flash on Beat</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-flash" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Count Beats Aloud</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-voice">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <!-- Rock beat (4/4 only) -->
+      <div class="setting-row" id="r-rockbeat-row" style="display:none">
+        <span class="setting-label">Rock Beat Drums</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-rockbeat">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
   </div>
 
   <!-- PeerJS loaded for the GitHub Pages / static-host path -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
   <script>
     // ── Mode detection ───────────────────────────────────────────────────────
-    // ?p=<peerID>  → PeerJS (WebRTC) — used from GitHub Pages or any static host
-    // (no param)   → WebSocket relay — used when node server.js is running locally
     var PARAMS      = new URLSearchParams(location.search);
     var MODE        = PARAMS.has('p') ? 'peer' : 'ws';
     var PEER_TARGET = PARAMS.get('p');
 
     // ── UI state ─────────────────────────────────────────────────────────────
-    var isPlaying    = false;
-    var currentBPM   = 96;
+    var isPlaying      = false;
+    var currentBPM     = 96;
     var sliderDragging = false;
 
     var statusEl      = document.getElementById('status');
@@ -212,8 +456,26 @@
     var bpmDisp       = document.getElementById('bpm-display');
     var bpmSlider     = document.getElementById('bpm-slider');
 
+    // Settings elements
+    var rAnimation   = document.getElementById('r-animation');
+    var rDirection   = document.getElementById('r-direction');
+    var rDirectionRow = document.getElementById('r-direction-row');
+    var rColor       = document.getElementById('r-color');
+    var rColorRow    = document.getElementById('r-color-row');
+    var rBeats       = document.getElementById('r-beats');
+    var rSubdivision = document.getElementById('r-subdivision');
+    var rSound       = document.getElementById('r-sound');
+    var rAccent      = document.getElementById('r-accent');
+    var rFlash       = document.getElementById('r-flash');
+    var rVoice       = document.getElementById('r-voice');
+    var rRockbeat    = document.getElementById('r-rockbeat');
+    var rRockbeatRow = document.getElementById('r-rockbeat-row');
+    var rFullscreen  = document.getElementById('fullscreen-toggle');
+
+    // Track current fullscreen state for button styling
+    var currentFullscreen = false;
+
     function updateUI() {
-      // When playing, hide both play buttons and show a single stop button
       if (isPlaying) {
         playBtn.style.display    = 'none';
         countInBtn.style.display = 'none';
@@ -228,9 +490,43 @@
       if (!sliderDragging) bpmSlider.value = currentBPM;
     }
 
+    // Update visibility of conditional settings (direction, color, rock beat)
+    function updateConditionalUI() {
+      var anim = rAnimation.value;
+      // Direction hidden for conductor
+      rDirectionRow.style.display = (anim === 'conductor') ? 'none' : '';
+      // Color shown only for circle
+      rColorRow.style.display = (anim === 'circle') ? '' : 'none';
+      // Rock beat shown only when beats = 4
+      var beats = parseInt(rBeats.value);
+      rRockbeatRow.style.display = (beats === 4) ? '' : 'none';
+    }
+
     function onStateUpdate(msg) {
       isPlaying  = msg.playing;
       currentBPM = msg.bpm;
+
+      // Sync all settings from the desktop
+      if (msg.animation !== undefined)       rAnimation.value   = msg.animation;
+      if (msg.direction !== undefined)       rDirection.value   = msg.direction;
+      if (msg.circleColor !== undefined)     rColor.value       = msg.circleColor;
+      if (msg.beatsPerMeasure !== undefined) rBeats.value       = msg.beatsPerMeasure;
+      if (msg.subdivision !== undefined)     rSubdivision.value = msg.subdivision;
+      if (msg.soundEnabled !== undefined)    rSound.checked     = msg.soundEnabled;
+      if (msg.accentEnabled !== undefined)   rAccent.checked    = msg.accentEnabled;
+      if (msg.flashEnabled !== undefined)    rFlash.checked     = msg.flashEnabled;
+      if (msg.voiceCountEnabled !== undefined) rVoice.checked   = msg.voiceCountEnabled;
+      if (msg.rockBeatEnabled !== undefined) rRockbeat.checked  = msg.rockBeatEnabled;
+      if (msg.isFullscreen !== undefined) {
+        currentFullscreen = msg.isFullscreen;
+        if (currentFullscreen) {
+          rFullscreen.classList.add('active');
+        } else {
+          rFullscreen.classList.remove('active');
+        }
+      }
+
+      updateConditionalUI();
       updateUI();
     }
 
@@ -277,7 +573,6 @@
     var _myPeer = null;
 
     function connectPeer() {
-      // Reuse existing peer if it's still alive; only create a new one if needed
       if (_myPeer && !_myPeer.destroyed) {
         doConnect();
         return;
@@ -323,7 +618,7 @@
       });
     }
 
-    // ── Controls ──────────────────────────────────────────────────────────────
+    // ── Play / Stop controls ─────────────────────────────────────────────────
     playBtn.addEventListener('click', function () {
       send({ type: 'play' });
     });
@@ -336,6 +631,7 @@
       send({ type: 'stop' });
     });
 
+    // ── BPM controls ─────────────────────────────────────────────────────────
     bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });
     bpmSlider.addEventListener('touchstart', function () { sliderDragging = true; }, { passive: true });
     bpmSlider.addEventListener('input', function () {
@@ -346,9 +642,8 @@
       send({ type: 'setBPM', bpm: parseInt(this.value, 10) });
     });
 
-    // +/- buttons with hold-to-repeat
     function changeBPM(delta) {
-      var next = Math.max(60, Math.min(240, currentBPM + delta));
+      var next = Math.max(30, Math.min(300, currentBPM + delta));
       if (next !== currentBPM) send({ type: 'setBPM', bpm: next });
     }
 
@@ -372,6 +667,69 @@
 
     setupHoldButton(document.getElementById('bpm-minus'), -1);
     setupHoldButton(document.getElementById('bpm-plus'),  +1);
+
+    // ── Settings controls ────────────────────────────────────────────────────
+
+    // Collapse / expand settings panel
+    var settingsBody   = document.getElementById('settings-body');
+    var settingsToggle = document.getElementById('settings-toggle');
+    settingsToggle.addEventListener('click', function () {
+      var collapsed = settingsBody.classList.toggle('collapsed');
+      settingsToggle.textContent = collapsed ? 'Show' : 'Hide';
+    });
+
+    // Fullscreen toggle
+    rFullscreen.addEventListener('click', function () {
+      send({ type: 'toggleFullscreen' });
+    });
+
+    // Animation selector
+    rAnimation.addEventListener('change', function () {
+      send({ type: 'setAnimation', value: this.value });
+      updateConditionalUI();
+    });
+
+    // Direction selector
+    rDirection.addEventListener('change', function () {
+      send({ type: 'setDirection', value: this.value });
+    });
+
+    // Circle color
+    rColor.addEventListener('input', function () {
+      send({ type: 'setCircleColor', value: this.value });
+    });
+
+    // Beats per measure
+    rBeats.addEventListener('change', function () {
+      send({ type: 'setBeatsPerMeasure', value: this.value });
+      updateConditionalUI();
+    });
+
+    // Subdivision
+    rSubdivision.addEventListener('change', function () {
+      send({ type: 'setSubdivision', value: this.value });
+    });
+
+    // Toggle switches
+    rSound.addEventListener('change', function () {
+      send({ type: 'setSoundEnabled', value: this.checked });
+    });
+
+    rAccent.addEventListener('change', function () {
+      send({ type: 'setAccentEnabled', value: this.checked });
+    });
+
+    rFlash.addEventListener('change', function () {
+      send({ type: 'setFlashEnabled', value: this.checked });
+    });
+
+    rVoice.addEventListener('change', function () {
+      send({ type: 'setVoiceCountEnabled', value: this.checked });
+    });
+
+    rRockbeat.addEventListener('change', function () {
+      send({ type: 'setRockBeatEnabled', value: this.checked });
+    });
 
     // ── Start ─────────────────────────────────────────────────────────────────
     if (MODE === 'ws') {
