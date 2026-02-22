@@ -108,7 +108,8 @@ main {
 }
 
 .controls-primary tone-play-toggle,
-.controls-primary #count-in-play-btn {
+.controls-primary #count-in-play-btn,
+.controls-primary #stop-btn {
   transform: scale(1.4);
   flex-shrink: 0;
 }
@@ -324,6 +325,12 @@ tone-play-toggle {
   align-self: center;
 }
 
+#play-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
 #count-in-play-btn {
   font-size: 16px;
   font-weight: 700;
@@ -349,6 +356,25 @@ tone-play-toggle {
 
 #count-in-play-btn.active:hover {
   background: #38a169;
+}
+
+#stop-btn {
+  font-size: 16px;
+  font-weight: 700;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0;
+  width: 120px;
+  height: 44px;
+  cursor: pointer;
+  transition: background 0.15s ease, filter 0.15s ease;
+  flex-shrink: 0;
+}
+
+#stop-btn:hover {
+  filter: brightness(1.12);
 }
 
 .toggle {
@@ -474,7 +500,8 @@ footer p {
   }
 
   .controls-primary tone-play-toggle,
-  .controls-primary #count-in-play-btn {
+  .controls-primary #count-in-play-btn,
+  .controls-primary #stop-btn {
     transform: scale(1.2);
   }
 
@@ -556,7 +583,8 @@ footer p {
   }
 
   .controls-primary tone-play-toggle,
-  .controls-primary #count-in-play-btn {
+  .controls-primary #count-in-play-btn,
+  .controls-primary #stop-btn {
     transform: scale(1.2);
   }
 
@@ -646,7 +674,8 @@ footer p {
   }
 
   .controls-primary tone-play-toggle,
-  .controls-primary #count-in-play-btn {
+  .controls-primary #count-in-play-btn,
+  .controls-primary #stop-btn {
     transform: scale(1.1);
   }
 
@@ -1190,6 +1219,11 @@ footer p {
   transform: scale(1.3);
 }
 
+#fullscreen-toggle-placeholder #count-in-play-btn,
+#fullscreen-toggle-placeholder #stop-btn {
+  transform: scale(1.3);
+}
+
 @media (max-width: 480px) {
   .fullscreen-exit-btn {
     top: 10px;
@@ -1212,7 +1246,9 @@ footer p {
     min-width: 150px;
   }
 
-  .fullscreen-controls tone-play-toggle {
+  .fullscreen-controls tone-play-toggle,
+  #fullscreen-toggle-placeholder #count-in-play-btn,
+  #fullscreen-toggle-placeholder #stop-btn {
     transform: scale(1.2);
   }
 }

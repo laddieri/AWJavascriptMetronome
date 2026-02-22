@@ -235,7 +235,7 @@ function enterFullscreen() {
   const overlay = document.getElementById('fullscreen-overlay');
   const canvas = document.querySelector('.canvas-wrapper canvas');
   const fullscreenWrapper = document.querySelector('.fullscreen-canvas-wrapper');
-  const mainToggle = document.querySelector('.controls tone-play-toggle');
+  const playButtonGroup = document.querySelector('.controls .play-button-group');
   const togglePlaceholder = document.getElementById('fullscreen-toggle-placeholder');
 
   // Move canvas to fullscreen wrapper
@@ -243,11 +243,11 @@ function enterFullscreen() {
     fullscreenWrapper.appendChild(canvas);
   }
 
-  // Move play toggle to fullscreen controls
-  if (mainToggle && togglePlaceholder) {
-    mainToggleParent = mainToggle.parentElement;
-    mainToggleNextSibling = mainToggle.nextSibling;
-    togglePlaceholder.appendChild(mainToggle);
+  // Move entire play button group (both play buttons + stop button) to fullscreen controls
+  if (playButtonGroup && togglePlaceholder) {
+    mainToggleParent = playButtonGroup.parentElement;
+    mainToggleNextSibling = playButtonGroup.nextSibling;
+    togglePlaceholder.appendChild(playButtonGroup);
   }
 
   // Show overlay
@@ -275,16 +275,16 @@ function exitFullscreen() {
   const overlay = document.getElementById('fullscreen-overlay');
   const canvas = document.querySelector('.fullscreen-canvas-wrapper canvas');
   const normalWrapper = document.querySelector('.canvas-wrapper');
-  const mainToggle = document.querySelector('#fullscreen-toggle-placeholder tone-play-toggle');
+  const playButtonGroup = document.querySelector('#fullscreen-toggle-placeholder .play-button-group');
 
   // Move canvas back to normal wrapper
   if (canvas && normalWrapper) {
     normalWrapper.appendChild(canvas);
   }
 
-  // Move play toggle back to main controls in its original position
-  if (mainToggle && mainToggleParent) {
-    mainToggleParent.insertBefore(mainToggle, mainToggleNextSibling);
+  // Move play button group back to main controls in its original position
+  if (playButtonGroup && mainToggleParent) {
+    mainToggleParent.insertBefore(playButtonGroup, mainToggleNextSibling);
   }
 
   // Hide overlay
@@ -1550,8 +1550,21 @@ scheduleMainBeat();
 
 
 //start/stop the transport
-const _playToggleEl = document.querySelector('tone-play-toggle');
-const _countInBtn   = document.getElementById('count-in-play-btn');
+const _playToggleEl      = document.querySelector('tone-play-toggle');
+const _countInBtn        = document.getElementById('count-in-play-btn');
+const _stopBtn           = document.getElementById('stop-btn');
+const _playBtnsContainer = document.getElementById('play-buttons-container');
+
+// Show/hide the combined stop button vs. the two individual play buttons
+function _updatePlayStopUI(playing) {
+  if (playing) {
+    _playBtnsContainer.classList.add('hidden');
+    _stopBtn.classList.remove('hidden');
+  } else {
+    _playBtnsContainer.classList.remove('hidden');
+    _stopBtn.classList.add('hidden');
+  }
+}
 
 // tone-play-toggle fires 'change' whenever its 'playing' property changes,
 // including when set programmatically. Use this flag to ignore those synthetic
@@ -1585,6 +1598,11 @@ _countInBtn.addEventListener('click', () => {
   _ensureAudioContext(() => toggleTransport(true));
 });
 
+// Stop button: stop the metronome and restore the two play buttons
+_stopBtn.addEventListener('click', () => {
+  toggleTransport(false);
+});
+
 function toggleTransport(withCountIn) {
   if (Tone.Transport.state === 'started') {
     // Stopping: reset state for clean restart
@@ -1595,6 +1613,7 @@ function toggleTransport(withCountIn) {
     countInBeatsRemaining = 0;
     _countInBtn.classList.remove('active');
     _setPlayTogglePlaying(false);
+    _updatePlayStopUI(false);
   } else {
     // Starting: reset beat counter and start fresh
     currentBeat = 0;
@@ -1609,6 +1628,7 @@ function toggleTransport(withCountIn) {
     if (withCountIn) {
       _countInBtn.classList.add('active');
     }
+    _updatePlayStopUI(true);
   }
   sendStateUpdate();
 }
