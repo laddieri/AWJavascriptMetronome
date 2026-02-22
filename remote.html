@@ -433,6 +433,15 @@
           <span class="toggle-track"></span>
         </label>
       </div>
+
+      <!-- Waltz beat (3/4 only) -->
+      <div class="setting-row" id="r-waltzbeat-row" style="display:none">
+        <span class="setting-label">Waltz Drums</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="r-waltzbeat">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
     </div>
   </div>
 
@@ -470,6 +479,8 @@
     var rVoice       = document.getElementById('r-voice');
     var rRockbeat    = document.getElementById('r-rockbeat');
     var rRockbeatRow = document.getElementById('r-rockbeat-row');
+    var rWaltzbeat    = document.getElementById('r-waltzbeat');
+    var rWaltzBeatRow = document.getElementById('r-waltzbeat-row');
     var rFullscreen  = document.getElementById('fullscreen-toggle');
 
     // Track current fullscreen state for button styling
@@ -497,9 +508,10 @@
       rDirectionRow.style.display = (anim === 'conductor') ? 'none' : '';
       // Color shown only for circle
       rColorRow.style.display = (anim === 'circle') ? '' : 'none';
-      // Rock beat shown only when beats = 4
+      // Rock beat shown only when beats = 4; waltz beat shown only when beats = 3
       var beats = parseInt(rBeats.value);
-      rRockbeatRow.style.display = (beats === 4) ? '' : 'none';
+      rRockbeatRow.style.display  = (beats === 4) ? '' : 'none';
+      rWaltzBeatRow.style.display = (beats === 3) ? '' : 'none';
     }
 
     function onStateUpdate(msg) {
@@ -516,7 +528,8 @@
       if (msg.accentEnabled !== undefined)   rAccent.checked    = msg.accentEnabled;
       if (msg.flashEnabled !== undefined)    rFlash.checked     = msg.flashEnabled;
       if (msg.voiceCountEnabled !== undefined) rVoice.checked   = msg.voiceCountEnabled;
-      if (msg.rockBeatEnabled !== undefined) rRockbeat.checked  = msg.rockBeatEnabled;
+      if (msg.rockBeatEnabled !== undefined)  rRockbeat.checked   = msg.rockBeatEnabled;
+      if (msg.waltzBeatEnabled !== undefined) rWaltzbeat.checked  = msg.waltzBeatEnabled;
       if (msg.isFullscreen !== undefined) {
         currentFullscreen = msg.isFullscreen;
         if (currentFullscreen) {
@@ -729,6 +742,10 @@
 
     rRockbeat.addEventListener('change', function () {
       send({ type: 'setRockBeatEnabled', value: this.checked });
+    });
+
+    rWaltzbeat.addEventListener('change', function () {
+      send({ type: 'setWaltzBeatEnabled', value: this.checked });
     });
 
     // ── Start ─────────────────────────────────────────────────────────────────

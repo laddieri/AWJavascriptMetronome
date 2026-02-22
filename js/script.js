@@ -28,6 +28,7 @@ var accentEnabled = true;
 var flashEnabled = true; // Flash background on beat
 var voiceCountEnabled = false; // Count beats aloud
 var rockBeatEnabled = false; // Rock beat drum machine (4/4 only)
+var waltzBeatEnabled = false; // Waltz beat drum machine (3/4 only)
 var countInBeatsRemaining = 0; // Counts down during the count-in phase
 var lastBeatTime = 0; // Track when last beat fired for animation sync
 var animBeat = 0;    // Beat index for conductor animation, updated in Draw callback
@@ -1137,6 +1138,10 @@ function initSettingsListeners() {
   const rockBeatCheckbox = document.getElementById('rock-beat-enabled');
   const rockBeatGroup = document.getElementById('rock-beat-setting-group');
 
+  // Waltz beat toggle
+  const waltzBeatCheckbox = document.getElementById('waltz-beat-enabled');
+  const waltzBeatGroup = document.getElementById('waltz-beat-setting-group');
+
   function updateRockBeatVisibility() {
     if (rockBeatGroup) {
       rockBeatGroup.style.display = beatsPerMeasure === 4 ? '' : 'none';
@@ -1145,6 +1150,15 @@ function initSettingsListeners() {
     if (beatsPerMeasure !== 4 && rockBeatEnabled) {
       rockBeatEnabled = false;
       if (rockBeatCheckbox) rockBeatCheckbox.checked = false;
+    }
+
+    if (waltzBeatGroup) {
+      waltzBeatGroup.style.display = beatsPerMeasure === 3 ? '' : 'none';
+    }
+    // Auto-disable waltz beat if time signature changes away from 3/4
+    if (beatsPerMeasure !== 3 && waltzBeatEnabled) {
+      waltzBeatEnabled = false;
+      if (waltzBeatCheckbox) waltzBeatCheckbox.checked = false;
     }
   }
 
@@ -1155,7 +1169,14 @@ function initSettingsListeners() {
     });
   }
 
-  // Show rock beat option if starting in 4/4
+  if (waltzBeatCheckbox) {
+    waltzBeatCheckbox.addEventListener('change', (e) => {
+      waltzBeatEnabled = e.target.checked;
+      sendStateUpdate();
+    });
+  }
+
+  // Show drum machine options for the initial time signature
   updateRockBeatVisibility();
 
   // Subdivision change
@@ -1434,6 +1455,21 @@ function triggerRockBeat(time, beat) {
   hihatSynth.triggerAttackRelease("16n", time + beatDuration / 2);
 }
 
+// Play waltz pattern for the given beat index (0-2 in 3/4)
+// Pattern: kick on beat 1, hi-hat on beats 2 & 3 ("oom-pah-pah")
+function triggerWaltzBeat(time, beat) {
+  const beatDuration = Tone.Time("4n").toSeconds();
+
+  if (beat === 0) {
+    // Beat 1: kick drum (the "oom")
+    kickSynth.triggerAttackRelease("C1", "8n", time);
+  } else {
+    // Beats 2 & 3: hi-hat (the "pah")
+    hihatSynth.triggerAttackRelease("16n", time);
+    snareSynth.triggerAttackRelease("16n", time);
+  }
+}
+
 // Subdivision event IDs (to cancel when settings change)
 var subdivisionEvents = [];
 
@@ -1478,9 +1514,11 @@ function scheduleMainBeat() {
     }
     // ────────────────────────────────────────────────────────────────────────
 
-    // Rock beat mode: play drum pattern instead of normal click sounds
+    // Drum machine modes: play drum pattern instead of normal click sounds
     if (rockBeatEnabled && beatsPerMeasure === 4) {
       triggerRockBeat(time, currentBeat);
+    } else if (waltzBeatEnabled && beatsPerMeasure === 3) {
+      triggerWaltzBeat(time, currentBeat);
     } else {
       // Determine if this is beat 1 (accented)
       const isAccent = currentBeat === 0;
@@ -2002,6 +2040,7 @@ function initPeerMode(remoteBtn) {
         flashEnabled:     flashEnabled,
         voiceCountEnabled: voiceCountEnabled,
         rockBeatEnabled:  rockBeatEnabled,
+        waltzBeatEnabled: waltzBeatEnabled,
         isFullscreen:     isFullscreen,
         circleColor:      circleColor,
       });
@@ -2096,6 +2135,7 @@ function sendStateUpdate() {
     flashEnabled:     flashEnabled,
     voiceCountEnabled: voiceCountEnabled,
     rockBeatEnabled:  rockBeatEnabled,
+    waltzBeatEnabled: waltzBeatEnabled,
     isFullscreen:     isFullscreen,
     circleColor:      circleColor,
   };
@@ -2175,6 +2215,14 @@ function applyRemoteCommand(msg) {
       }
       var rbGroup = document.getElementById('rock-beat-setting-group');
       if (rbGroup) rbGroup.style.display = bpm === 4 ? '' : 'none';
+      // Auto-disable waltz beat if not 3/4
+      if (bpm !== 3 && waltzBeatEnabled) {
+        waltzBeatEnabled = false;
+        var wbCb = document.getElementById('waltz-beat-enabled');
+        if (wbCb) wbCb.checked = false;
+      }
+      var wbGroup = document.getElementById('waltz-beat-setting-group');
+      if (wbGroup) wbGroup.style.display = bpm === 3 ? '' : 'none';
       sendStateUpdate();
       break;
     }
@@ -2226,6 +2274,15 @@ function applyRemoteCommand(msg) {
       rockBeatEnabled = !!msg.value;
       var rbCb2 = document.getElementById('rock-beat-enabled');
       if (rbCb2) rbCb2.checked = rockBeatEnabled;
+      sendStateUpdate();
+      break;
+    }
+
+    case 'setWaltzBeatEnabled': {
+      if (beatsPerMeasure !== 3) break;
+      waltzBeatEnabled = !!msg.value;
+      var wbCb2 = document.getElementById('waltz-beat-enabled');
+      if (wbCb2) wbCb2.checked = waltzBeatEnabled;
       sendStateUpdate();
       break;
     }
