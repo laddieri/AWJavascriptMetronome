@@ -1784,10 +1784,19 @@ function windowResized() {
 function draw() {
   // Flash white at beat (when progress is near 0) if enabled
   const progress = getAnimationProgress();
-  if (flashEnabled && Tone.Transport.state === 'started' && progress < 0.08) {
+  const isFlashing = flashEnabled && Tone.Transport.state === 'started' && progress < 0.08;
+  if (isFlashing) {
     background('white');
   } else {
     background('#696969');
+  }
+
+  // In fullscreen, also flash the overlay background so the entire screen flashes
+  if (isFullscreen) {
+    const overlay = document.getElementById('fullscreen-overlay');
+    if (overlay) {
+      overlay.style.background = isFlashing ? 'white' : '#696969';
+    }
   }
 
   // Scale all drawing to fit responsive canvas
