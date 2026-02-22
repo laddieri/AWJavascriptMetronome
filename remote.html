@@ -91,6 +91,15 @@
       box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
     }
 
+    /* Combined stop button (replaces both play buttons when playing) */
+    #remote-stop-btn {
+      font-size: 3.2rem;
+      background: #dc2626;
+      box-shadow: 0 0 36px rgba(220, 38, 38, 0.45);
+      width: 280px;
+      border-radius: 65px;
+    }
+
     /* ── BPM section ──────────────────────────────────────────────────────── */
     .bpm-section {
       display: flex;
@@ -167,6 +176,7 @@
       <span class="ci-play">&#9654;</span>
       <span class="ci-label">+2 bars</span>
     </button>
+    <button id="remote-stop-btn" class="play-circle" style="display:none" aria-label="Stop">&#9646;&#9646;</button>
   </div>
 
   <div class="bpm-section">
@@ -195,23 +205,23 @@
     var currentBPM   = 96;
     var sliderDragging = false;
 
-    var statusEl    = document.getElementById('status');
-    var playBtn     = document.getElementById('play-btn');
-    var countInBtn  = document.getElementById('count-in-btn');
-    var bpmDisp     = document.getElementById('bpm-display');
-    var bpmSlider   = document.getElementById('bpm-slider');
+    var statusEl      = document.getElementById('status');
+    var playBtn       = document.getElementById('play-btn');
+    var countInBtn    = document.getElementById('count-in-btn');
+    var remoteStopBtn = document.getElementById('remote-stop-btn');
+    var bpmDisp       = document.getElementById('bpm-display');
+    var bpmSlider     = document.getElementById('bpm-slider');
 
     function updateUI() {
-      playBtn.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
-      playBtn.classList.toggle('playing', isPlaying);
-
-      // While playing both buttons act as stop (both turn red)
+      // When playing, hide both play buttons and show a single stop button
       if (isPlaying) {
-        countInBtn.innerHTML = '&#9646;&#9646;';
-        countInBtn.classList.add('playing');
+        playBtn.style.display    = 'none';
+        countInBtn.style.display = 'none';
+        remoteStopBtn.style.display = '';
       } else {
-        countInBtn.innerHTML = '<span class="ci-play">&#9654;</span><span class="ci-label">+2 bars</span>';
-        countInBtn.classList.remove('playing');
+        playBtn.style.display    = '';
+        countInBtn.style.display = '';
+        remoteStopBtn.style.display = 'none';
       }
 
       bpmDisp.textContent = Math.round(currentBPM);
@@ -315,11 +325,15 @@
 
     // ── Controls ──────────────────────────────────────────────────────────────
     playBtn.addEventListener('click', function () {
-      send({ type: isPlaying ? 'stop' : 'play' });
+      send({ type: 'play' });
     });
 
     countInBtn.addEventListener('click', function () {
-      send({ type: isPlaying ? 'stop' : 'playWithCountIn' });
+      send({ type: 'playWithCountIn' });
+    });
+
+    remoteStopBtn.addEventListener('click', function () {
+      send({ type: 'stop' });
     });
 
     bpmSlider.addEventListener('mousedown',  function () { sliderDragging = true; });
