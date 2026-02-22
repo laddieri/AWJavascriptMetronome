@@ -91,6 +91,16 @@
               </div>
             </div>
 
+            <div class="control-group">
+              <label class="control-label">Subdivision</label>
+              <select id="subdivision" class="control-dropdown">
+                <option value="none">None</option>
+                <option value="eighth">8th notes</option>
+                <option value="triplet">Triplets</option>
+                <option value="sixteenth">16th notes</option>
+              </select>
+            </div>
+
             <div class="control-group" id="direction-group">
               <label class="control-label">Direction</label>
               <select id="bounce-direction" class="control-dropdown">
@@ -122,17 +132,6 @@
     <div id="settings-modal" class="settings-modal hidden">
       <div class="settings-container">
         <h2>Advanced Settings</h2>
-
-        <div class="setting-group">
-          <label class="setting-label">Subdivision</label>
-          <select id="subdivision" class="setting-select">
-            <option value="none">None (quarter notes)</option>
-            <option value="eighth">8th notes</option>
-            <option value="triplet">Triplets</option>
-            <option value="sixteenth">16th notes</option>
-          </select>
-          <p class="setting-hint">Add notes between beats</p>
-        </div>
 
         <div class="setting-group">
           <label class="setting-label">
