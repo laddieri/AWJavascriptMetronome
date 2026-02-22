@@ -253,11 +253,12 @@ function enterFullscreen() {
   // Show overlay
   overlay.classList.remove('hidden');
 
-  // Sync tempo slider with current BPM
-  const fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
-  if (fullscreenSlider) {
-    fullscreenSlider.setAttribute('value', Tone.Transport.bpm.value);
-  }
+  // Sync fullscreen tempo controls with current BPM
+  var bpm = Math.round(Tone.Transport.bpm.value);
+  var fullscreenSlider = document.getElementById('fullscreen-tempo-slider');
+  var fsBpmVal = document.getElementById('fullscreen-bpm-value');
+  if (fullscreenSlider) fullscreenSlider.value = bpm;
+  if (fsBpmVal) fsBpmVal.textContent = bpm;
 
   // Resize canvas for fullscreen
   setTimeout(() => {
@@ -290,11 +291,8 @@ function exitFullscreen() {
   // Hide overlay
   overlay.classList.add('hidden');
 
-  // Sync main slider with current BPM
-  const mainSlider = document.querySelector('.controls tone-slider');
-  if (mainSlider) {
-    mainSlider.setAttribute('value', Tone.Transport.bpm.value);
-  }
+  // Sync main controls with current BPM
+  applyBPM(Math.round(Tone.Transport.bpm.value));
 
   // Resize canvas for normal mode
   setTimeout(() => {
@@ -324,15 +322,8 @@ function initFullscreenListeners() {
 
   // Fullscreen tempo slider
   if (fullscreenSlider) {
-    fullscreenSlider.addEventListener('change', e => {
-      Tone.Transport.bpm.value = e.detail;
-      cachedBPM = e.detail;
-      secondsPerBeat = 1 / (e.detail / 60);
-      // Sync main slider
-      const mainSlider = document.querySelector('.controls tone-slider');
-      if (mainSlider) {
-        mainSlider.setAttribute('value', e.detail);
-      }
+    fullscreenSlider.addEventListener('input', function(e) {
+      applyBPM(parseInt(e.target.value));
     });
   }
 
@@ -1633,13 +1624,42 @@ function toggleTransport(withCountIn) {
   sendStateUpdate();
 }
 
-//update BPM from slider
-document.querySelector('tone-slider').addEventListener('change', e => {
-  Tone.Transport.bpm.value = e.detail;
-  cachedBPM = e.detail;
-  secondsPerBeat = 1 / (e.detail / 60);
+// Helper: apply a BPM value to all tempo controls (slider, number input, fullscreen)
+function applyBPM(bpm) {
+  bpm = Math.max(30, Math.min(300, Math.round(bpm)));
+  Tone.Transport.bpm.value = bpm;
+  cachedBPM = bpm;
+  secondsPerBeat = 1 / (bpm / 60);
+
+  // Sync all controls
+  var slider = document.getElementById('tempo-slider');
+  var numInput = document.getElementById('bpm-input');
+  var fsSlider = document.getElementById('fullscreen-tempo-slider');
+  var fsBpmVal = document.getElementById('fullscreen-bpm-value');
+  if (slider) slider.value = bpm;
+  if (numInput) numInput.value = bpm;
+  if (fsSlider) fsSlider.value = bpm;
+  if (fsBpmVal) fsBpmVal.textContent = bpm;
+
   sendStateUpdate();
-})
+}
+
+// Update BPM from range slider
+document.getElementById('tempo-slider').addEventListener('input', function(e) {
+  applyBPM(parseInt(e.target.value));
+});
+
+// Update BPM from number input
+document.getElementById('bpm-input').addEventListener('change', function(e) {
+  applyBPM(parseInt(e.target.value) || 96);
+});
+
+// Also update live while typing in the number input (on Enter key)
+document.getElementById('bpm-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.target.blur();
+  }
+});
 
 // Show/hide color picker based on animation type
 function updateColorPickerVisibility() {
@@ -1741,15 +1761,9 @@ function setup() {
   document.querySelector('#tempo-marking').addEventListener('change', e => {
     const bpm = parseInt(e.target.value);
     if (bpm) {
-      Tone.Transport.bpm.value = bpm;
-      cachedBPM = bpm;
-      secondsPerBeat = 1 / (bpm / 60);
-      // Update the slider display
-      const slider = document.querySelector('tone-slider');
-      if (slider) {
-        slider.setAttribute('value', bpm);
-      }
-      sendStateUpdate();
+      applyBPM(bpm);
+      // Reset dropdown to placeholder so it can be re-selected
+      e.target.value = '';
     }
   });
 
@@ -2075,13 +2089,7 @@ function applyRemoteCommand(msg) {
       break;
 
     case 'setBPM': {
-      var bpm = Math.max(60, Math.min(240, Math.round(msg.bpm)));
-      Tone.Transport.bpm.value = bpm;
-      cachedBPM = bpm;
-      secondsPerBeat = 1 / (bpm / 60);
-      var slider = document.querySelector('tone-slider');
-      if (slider) slider.setAttribute('value', bpm);
-      sendStateUpdate();
+      applyBPM(Math.round(msg.bpm));
       break;
     }
 
